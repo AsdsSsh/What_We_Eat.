@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:what_we_eat/pages/about_us_page.dart';
+import 'package:what_we_eat/components/bottom_nav_bar.dart';
+import 'package:what_we_eat/pages/do_dish_page.dart';
 import 'package:what_we_eat/pages/home_page.dart';
 import 'package:what_we_eat/pages/me_page.dart';
 import 'package:what_we_eat/pages/search_page.dart';
@@ -20,17 +21,38 @@ class _MainPageState extends State<MainPage> {
 
   int _selectedIndex = 0;
 
-  final List _pages = [
-    const HomePage(),
-    const SearchPage(),
-    const MePage()
-  ];
+  late final List<Widget> _pages;
+  final PageController _pageController = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomePage(onExplore: () => _onItemTapped(1)),
+      DoDishPage(),
+      const SearchPage(),
+    ];
+  }
 
   void _onItemTapped(int index) {
+    // animate to page if controller attached, otherwise just update index
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
     setState(() {
       _selectedIndex = index;
     });
     
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -42,15 +64,12 @@ class _MainPageState extends State<MainPage> {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Color.fromARGB(255, 47, 106, 209),
+                color: Colors.grey[900],
               ),
-              child: Text(
-                '菜单',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold
-                )
+              child: Icon(
+                Icons.restaurant_menu,
+                color: Colors.grey[300],
+                size: 100,
               ),
             ),
             ListTile(
@@ -74,13 +93,13 @@ class _MainPageState extends State<MainPage> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.developer_board),
-              title: Text('关于我们'),
+              leading: Icon(Icons.people),
+              title: Text('我的'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AboutUsPage())
+                  MaterialPageRoute(builder: (context) => const MePage())
                 );
               },
             )
@@ -88,34 +107,28 @@ class _MainPageState extends State<MainPage> {
         ),
       ),
       appBar: AppBar(
-        title: Center(child: Text('今天吃什么？')),
-        backgroundColor: const Color.fromARGB(255, 47, 106, 209),
+        // title: Center(child: Text('今天吃什么？')),
+        backgroundColor: Colors.transparent,
         titleTextStyle: const TextStyle(
           color: Colors.white,
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
       ),
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '首页',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: '搜索',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: '我的',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue[800],
-        onTap: _onItemTapped,
+      bottomNavigationBar: BottomNavBar(
+        onTabChange: (index) =>_onItemTapped(index),
+        selectedIndex: _selectedIndex,
       ),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        children: _pages,
+      ),
+
     );
   }
 }

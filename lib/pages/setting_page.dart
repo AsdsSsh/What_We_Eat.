@@ -10,6 +10,7 @@ class SettingPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('设置'),
+        backgroundColor: Color.fromARGB(255, 47, 106, 209),
       ),
       body: Center(
         child: Text('这是设置页面'),

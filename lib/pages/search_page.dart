@@ -7,13 +7,27 @@ class SearchPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('设置'),
-      ),
-      body: Center(
-        child: Text('这是搜索页面'),
-      ),
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.all(12.0),
+          margin: EdgeInsets.symmetric(horizontal: 25),
+          decoration: BoxDecoration(
+            color: Colors.grey[100] , 
+            borderRadius: BorderRadius.circular(8)
+            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '搜索',
+                style: TextStyle(color: Colors.grey),
+                ),
+              Icon(Icons.search),
+            ],
+          ),
+        )
+      ]
     );
   }
 }
