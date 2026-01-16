@@ -113,6 +113,11 @@ class _DoDishPageState extends State<DoDishPage>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
+    // Drive rebuilds from the controller so we can use a direct Positioned
+    // child of the Stack (avoids nesting Positioned inside other widgets).
+    _animationController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -451,86 +456,88 @@ class _DoDishPageState extends State<DoDishPage>
             ],
           ),
         ),
-          // Flying animation layer
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                if (_animatingIngredient == null || _animationController.value == 0) {
-                  return const SizedBox.shrink();
+          // Flying animation layer: use a single Positioned in the Stack whose
+          // left/top are computed from the controller-driven state. This
+          // avoids placing a Positioned inside another widget (which causes
+          // ParentDataWidget errors).
+          if (_animatingIngredient != null && _animationController.value > 0)
+            Builder(builder: (context) {
+              // Use easeInOutCubic for smooth motion
+              const curve = Curves.easeInOutCubic;
+              final animValue = curve.transform(_animationController.value);
+              final ingredient = _animatingIngredient!;
+              final icon = _ingredientIcons[ingredient] ?? Icons.circle;
+              final color = _ingredientColors[ingredient] ?? Colors.grey;
+
+              // Get start and end positions (global coordinates)
+              final startPos = _getIngredientPosition();
+              final endPos = _getBasketPosition();
+
+              // Interpolate position
+              final currentX = startPos.dx + (endPos.dx - startPos.dx) * animValue;
+              final currentY = startPos.dy + (endPos.dy - startPos.dy) * animValue;
+
+              // Change icon and opacity
+              const transitionPoint = 0.65; // When to switch to bowl icon
+              final isShowingBowl = animValue > transitionPoint;
+              final showBowlOpacity = isShowingBowl
+                  ? ((animValue - transitionPoint) / (1.0 - transitionPoint)).clamp(0.0, 1.0)
+                  : 0.0;
+
+              // Scale animation
+              final scale = 1.0 - (animValue * 0.4);
+
+              // Convert global coordinates to the Stack's local coordinates by
+              // using the Stack's RenderBox. The Stack is the nearest
+              // RenderBox ancestor for this Builder's context.
+              Offset localOffset = Offset(currentX, currentY);
+              try {
+                final box = context.findRenderObject() as RenderBox?;
+                if (box != null) {
+                  localOffset = box.globalToLocal(Offset(currentX, currentY));
                 }
-                
-                // Use easeInOutCubic for smooth motion
-                const curve = Curves.easeInOutCubic;
-                final animValue = curve.transform(_animationController.value);
-                final ingredient = _animatingIngredient!;
-                final icon = _ingredientIcons[ingredient] ?? Icons.circle;
-                final color = _ingredientColors[ingredient] ?? Colors.grey;
-                
-                // Get start and end positions
-                final startPos = _getIngredientPosition();
-                final endPos = _getBasketPosition();
-                
-                // Interpolate position
-                final currentX = startPos.dx + (endPos.dx - startPos.dx) * animValue;
-                final currentY = startPos.dy + (endPos.dy - startPos.dy) * animValue;
-                
-                // Change icon and opacity
-                const transitionPoint = 0.65; // When to switch to bowl icon
-                final isShowingBowl = animValue > transitionPoint;
-                final showBowlOpacity = isShowingBowl
-                    ? ((animValue - transitionPoint) / (1.0 - transitionPoint)).clamp(0.0, 1.0)
-                    : 0.0;
-                
-                // Scale animation
-                final scale = 1.0 - (animValue * 0.4);
-                
-                return Positioned(
-                  left: currentX - 20,
-                  top: currentY - 20,
-                  child: IgnorePointer(
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Original ingredient icon (fades out)
-                          Transform.scale(
-                            scale: scale,
-                            child: Opacity(
-                              opacity: (1.0 - animValue * 0.3).clamp(0.0, 1.0),
-                              child: Icon(
-                                icon,
-                                color: color,
-                                size: 24,
-                              ),
+              } catch (e) {
+                // ignore and use global coords as fallback
+              }
+
+              return Positioned(
+                left: localOffset.dx - 20,
+                top: localOffset.dy - 20,
+                child: IgnorePointer(
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Transform.scale(
+                          scale: scale,
+                          child: Opacity(
+                            opacity: (1.0 - animValue * 0.3).clamp(0.0, 1.0),
+                            child: Icon(
+                              icon,
+                              color: color,
+                              size: 24,
                             ),
                           ),
-                          // Bowl icon (fades in)
-                          Transform.scale(
-                            scale: scale * 0.9,
-                            child: Opacity(
-                              opacity: showBowlOpacity,
-                              child: Icon(
-                                Icons.restaurant,
-                                color: Colors.orange.shade700,
-                                size: 24,
-                              ),
+                        ),
+                        Transform.scale(
+                          scale: scale * 0.9,
+                          child: Opacity(
+                            opacity: showBowlOpacity,
+                            child: Icon(
+                              Icons.restaurant,
+                              color: Colors.orange.shade700,
+                              size: 24,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
-          ),
+                ),
+              );
+            }),
         ],
       ),
     );

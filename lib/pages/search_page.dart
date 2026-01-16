@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'recipe_detail_page.dart';
-
+import 'package:what_we_eat/database/food_database_helper.dart';
+import 'package:what_we_eat/models/food.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -9,8 +10,22 @@ class SearchPage extends StatefulWidget {
   State<SearchPage> createState() => _SearchPageState();
 }
 
-
 class _SearchPageState extends State<SearchPage> {
+
+  @override
+  void initState() {
+    super.initState();
+    _getFood();
+  }
+
+  List<Food> _foodList = [];
+  void _getFood() async {
+    final foods = await FoodDatabaseHelper.instance.getAllFoods();
+    setState(()  {
+      _foodList = foods;
+    });
+  }
+  
   final TextEditingController _searchController = TextEditingController();
   List<String> _searchHistory = ['番茄鸡蛋', '宫保鸡丁', '红烧肉', '酸辣汤'];
   List<String> _searchResults = [];
@@ -156,7 +171,6 @@ class _SearchPageState extends State<SearchPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hot Recipes Section
-          _buildSectionHeader('热门菜谱'),
           const SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
@@ -167,10 +181,10 @@ class _SearchPageState extends State<SearchPage> {
               mainAxisSpacing: 12,
               childAspectRatio: 1.2,
             ),
-            itemCount: _popularRecipes.length,
+            itemCount: _foodList.length,
             itemBuilder: (context, index) {
-              final recipe = _popularRecipes[index];
-              return _buildRecipeCard(recipe);
+              final recipe = _foodList[index];
+              return _buildRecipeCard(recipe.name);
             },
           ),
           const SizedBox(height: 24),

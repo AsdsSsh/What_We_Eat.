@@ -69,9 +69,10 @@ class _SplashScreenState extends State<SplashScreen>
               scale: _scale.value,
               child: Opacity(
                 opacity: _opacity.value,
-                child: Icon(
-                  Icons.restaurant_menu,
-                  size: 150,
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 250,
+                  height: 250,
                   color: Colors.white,
                 ),
               ),

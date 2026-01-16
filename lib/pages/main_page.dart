@@ -66,11 +66,12 @@ class _MainPageState extends State<MainPage> {
               decoration: BoxDecoration(
                 color: Colors.grey[900],
               ),
-              child: Icon(
-                Icons.restaurant_menu,
-                color: Colors.grey[300],
-                size: 100,
-              ),
+              child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 300,
+                  height: 300,
+                  color: Colors.white,
+                ),
             ),
             ListTile(
               leading: Icon(Icons.home),

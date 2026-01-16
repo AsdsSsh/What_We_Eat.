@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:what_we_eat/pages/splash_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
