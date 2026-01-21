@@ -38,9 +38,16 @@ class FoodDatabaseHelper {
         steps TEXT
       )
     ''');
+    // 新增原材料表
+    await db.execute('''
+      CREATE TABLE raw_materials(
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        type TEXT
+      )
+    ''');
 
-
-    // 从json 文件中初始化数据到数据库
+    // 从json 文件中初始化数据到数据库 - 菜谱
     try {
       final data = await rootBundle.loadString('assets/data/foods.json');
       final List<dynamic> jsonList = json.decode(data);
@@ -55,6 +62,23 @@ class FoodDatabaseHelper {
         await db.insert('foods', food.toMap());
         print('初始化 ${jsonList.length} 条菜谱');
       }
+    } catch (e) {
+      print('❌ 初始化失败: $e');
+    }
+
+    // 从json 文件中初始化数据到数据库 - 原材料
+    try {
+      final rmData = await rootBundle.loadString('assets/data/raw_material.json');
+      final List<dynamic> rmList = json.decode(rmData);
+      for (var item in rmList) {
+        final map = {
+          'id': item['id'] as String,
+          'name': item['name'] as String,
+          'type': item['type'] as String,
+        };
+        await db.insert('raw_materials', map);
+      }
+      print('初始化 ${rmList.length} 条食材');
     } catch (e) {
       print('❌ 初始化失败: $e');
     }
@@ -104,5 +128,18 @@ class FoodDatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // 原材料查询：确保表存在并返回全部原材料行
+  Future<List<Map<String, dynamic>>> getAllRawMaterials() async {
+    final db = await database;
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS raw_materials(
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        type TEXT
+      )
+    ''');
+    return await db.query('raw_materials');
   }
 }

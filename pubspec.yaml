@@ -18,6 +18,10 @@ dependencies:
   sqflite: ^2.3.0    #SQLite 依赖
   path: ^1.8.3       #路径拼接依赖
   path_provider: ^2.1.1   #获取数据库存储路径
+  shared_preferences: ^2.5.4
+  device_info_plus: ^12.3.0
+  uuid: ^4.5.2
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
@@ -34,6 +38,7 @@ flutter:
   assets:
     - assets/images/transparent_icon.png
     - assets/data/foods.json
+    - assets/data/raw_material.json
     - assets/images/logo.png
 
 flutter_launcher_icons:

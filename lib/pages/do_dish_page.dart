@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'recipe_detail_page.dart';
-
+import 'package:what_we_eat/database/food_database_helper.dart';
+import 'package:what_we_eat/models/food.dart'; // 新增：用于类型推断
 
 class DoDishPage extends StatefulWidget {
   const DoDishPage({super.key});
@@ -12,86 +13,13 @@ class DoDishPage extends StatefulWidget {
 
 class _DoDishPageState extends State<DoDishPage>
     with TickerProviderStateMixin {
-  // Available ingredients
-  final List<String> _allIngredients = [
-    '鸡蛋', '番茄', '米', '油', '盐',
-    '鸡肉', '猪肉', '牛肉', '鱼', '虾',
-    '青菜', '豆腐', '土豆', '洋葱', '大蒜',
-    '生姜', '葱', '辣椒', '酱油', '醋',
-    '糖', '花生', '芝麻', '面粉', '黄瓜',
-  ];
+  // Available ingredients (改为动态，从数据库读取)
+  List<String> _allIngredients = [];
+  // 按类型分组的原材料
+  Map<String, List<String>> _ingredientsByType = {};
 
-  // Ingredient to icon mapping
-  final Map<String, IconData> _ingredientIcons = {
-    '鸡蛋': Icons.egg,
-    '番茄': Icons.nature,
-    '米': Icons.grain,
-    '油': Icons.opacity,
-    '盐': Icons.blur_on,
-    '鸡肉': Icons.dinner_dining,
-    '猪肉': Icons.pets,
-    '牛肉': Icons.lunch_dining,
-    '鱼': Icons.pets,
-    '虾': Icons.bug_report,
-    '青菜': Icons.spa,
-    '豆腐': Icons.blender,
-    '土豆': Icons.storage,
-    '洋葱': Icons.circle,
-    '大蒜': Icons.bubble_chart,
-    '生姜': Icons.local_florist,
-    '葱': Icons.grass,
-    '辣椒': Icons.local_fire_department,
-    '酱油': Icons.format_color_fill,
-    '醋': Icons.water_drop,
-    '糖': Icons.cake,
-    '花生': Icons.circle,
-    '芝麻': Icons.brightness_1,
-    '面粉': Icons.cloud,
-    '黄瓜': Icons.check_circle,
-  };
-
-  // Ingredient to color mapping
-  final Map<String, Color> _ingredientColors = {
-    '鸡蛋': Colors.yellow,
-    '番茄': Colors.red,
-    '米': Colors.amber,
-    '油': Colors.yellow,
-    '盐': Colors.grey,
-    '鸡肉': Colors.orange,
-    '猪肉': Colors.pink,
-    '牛肉': Colors.red,
-    '鱼': Colors.blue,
-    '虾': Colors.orange,
-    '青菜': Colors.green,
-    '豆腐': Colors.white70,
-    '土豆': Colors.brown,
-    '洋葱': Colors.purple,
-    '大蒜': Colors.grey,
-    '生姜': Colors.orange,
-    '葱': Colors.green,
-    '辣椒': Colors.red,
-    '酱油': Colors.brown,
-    '醋': Colors.amber,
-    '糖': Colors.orange,
-    '花生': Colors.brown,
-    '芝麻': Colors.grey,
-    '面粉': Colors.amber,
-    '黄瓜': Colors.green,
-  };
-
-  // Recipes with required ingredients
-  final Map<String, List<String>> _recipes = {
-    '番茄鸡蛋': ['番茄', '鸡蛋', '油', '盐'],
-    '宫保鸡丁': ['鸡肉', '花生', '辣椒', '酱油', '糖'],
-    '红烧肉': ['猪肉', '酱油', '糖', '生姜', '大蒜'],
-    '清蒸鱼': ['鱼', '生姜', '葱', '酱油'],
-    '酸辣汤': ['豆腐', '醋', '辣椒', '盐', '生姜'],
-    '土豆咖喱': ['土豆', '洋葱', '油', '盐'],
-    '炒青菜': ['青菜', '油', '盐', '大蒜'],
-    '蛋炒饭': ['米', '鸡蛋', '油', '盐', '葱'],
-    '虾仁炒饭': ['虾', '米', '鸡蛋', '油', '盐'],
-    '豆腐炒': ['豆腐', '油', '盐', '大蒜', '葱'],
-  };
+  // Recipes with required ingredients（改为动态加载）
+  Map<String, List<String>> _recipes = {};
 
   Set<String> _selectedIngredients = {};
   List<String> _matchedRecipes = [];
@@ -106,18 +34,68 @@ class _DoDishPageState extends State<DoDishPage>
     super.initState();
     _basketKey = GlobalKey();
     _basketTextKey = GlobalKey();
-    for (var ingredient in _allIngredients) {
-      _ingredientKeys[ingredient] = GlobalKey();
-    }
+    // 原本这里基于硬编码列表创建 keys；现在改为在数据加载后创建
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    // Drive rebuilds from the controller so we can use a direct Positioned
-    // child of the Stack (avoids nesting Positioned inside other widgets).
     _animationController.addListener(() {
       if (mounted) setState(() {});
     });
+    // 从数据库加载原材料
+    _loadIngredientsFromDb();
+    // 从数据库加载菜谱
+    _loadRecipesFromDb();
+  }
+
+  Future<void> _loadIngredientsFromDb() async {
+    try {
+      final rows = await FoodDatabaseHelper.instance.getAllRawMaterials();
+      print('DEBUG: 加载的原材料行数: ${rows.length}');
+      print('DEBUG: 原材料原始数据: $rows');
+      final names = rows
+          .map((r) => (r['name'] as String?) ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+      print('DEBUG: 提取的原材料名称: $names');
+      final Map<String, List<String>> grouped = {};
+      for (final r in rows) {
+        final name = (r['name'] as String?) ?? '';
+        if (name.isEmpty) continue;
+        final type = (r['type'] as String?) ?? '其他';
+        grouped.putIfAbsent(type, () => []).add(name);
+      }
+      print('DEBUG: 分组后的原材料: $grouped');
+      setState(() {
+        _allIngredients = names;
+        _ingredientsByType = grouped;
+        _ingredientKeys.clear();
+        for (var ingredient in _allIngredients) {
+          _ingredientKeys[ingredient] = GlobalKey();
+        }
+        _updateMatchedRecipes();
+      });
+    } catch (e) {
+      print('ERROR: 加载原材料异常: $e');
+      print('ERROR: 堆栈追踪: ${StackTrace.current}');
+    }
+  }
+
+  // 新增：从数据库 foods 表读取菜谱及其所需原材料
+  Future<void> _loadRecipesFromDb() async {
+    try {
+      final List<Food> foods = await FoodDatabaseHelper.instance.getAllFoods();
+      print('DEBUG: 加载的菜谱数量: ${foods.length}');
+      final Map<String, List<String>> map = {
+        for (final f in foods) f.name: List<String>.from(f.ingredients)
+      };
+      setState(() {
+        _recipes = map;
+        _updateMatchedRecipes();
+      });
+    } catch (e) {
+      print('ERROR: 加载菜谱异常: $e');
+    }
   }
 
   @override
@@ -127,7 +105,6 @@ class _DoDishPageState extends State<DoDishPage>
   }
 
   void _toggleIngredient(String ingredient) {
-    // Immediately update selection state
     setState(() {
       if (_selectedIngredients.contains(ingredient)) {
         _selectedIngredients.remove(ingredient);
@@ -135,17 +112,6 @@ class _DoDishPageState extends State<DoDishPage>
         _selectedIngredients.add(ingredient);
       }
       _updateMatchedRecipes();
-      // Then set ingredient to animate
-      _animatingIngredient = ingredient;
-    });
-    
-    // Play animation after state update
-    _animationController.forward(from: 0.0).then((_) {
-      if (mounted) {
-        setState(() {
-          _animatingIngredient = null;
-        });
-      }
     });
   }
 
@@ -186,14 +152,19 @@ class _DoDishPageState extends State<DoDishPage>
       _matchedRecipes = [];
       return;
     }
-
     _matchedRecipes = _recipes.entries
-        .where((entry) {
-          // Check if all recipe ingredients are in selected ingredients
-          return entry.value.every((ingredient) => _selectedIngredients.contains(ingredient));
-        })
+        .where((entry) =>
+            entry.value.any((ingredient) => _selectedIngredients.contains(ingredient)))
         .map((entry) => entry.key)
         .toList();
+  }
+
+  double _calcMatchPercent(List<String> requiredIngredients) {
+    if (requiredIngredients.isEmpty) return 0;
+    final matchedCount = requiredIngredients
+        .where((ingredient) => _selectedIngredients.contains(ingredient))
+        .length;
+    return (matchedCount / requiredIngredients.length) * 100;
   }
 
   void _clearSelection() {
@@ -219,11 +190,7 @@ class _DoDishPageState extends State<DoDishPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('一键做菜'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      // appBar 移除
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -231,36 +198,6 @@ class _DoDishPageState extends State<DoDishPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Basket indicator at top
-                Center(
-                  child: Container(
-                    key: _basketKey,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade100,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.orange.shade300,
-                        width: 2,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.restaurant, color: Colors.orange.shade700, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          key: _basketTextKey,
-                          '已选食材: ${_selectedIngredients.length}',
-                          style: TextStyle(
-                            color: Colors.orange.shade700,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 16),
 
                 // Info Card
@@ -343,59 +280,70 @@ class _DoDishPageState extends State<DoDishPage>
               ),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _allIngredients.map((ingredient) {
-                final icon = _ingredientIcons[ingredient] ?? Icons.circle;
-                final color = _ingredientColors[ingredient] ?? Colors.grey;
-                
-                return GestureDetector(
-                  onTap: () => _toggleIngredient(ingredient),
-                  child: Container(
-                    key: _ingredientKeys[ingredient],
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _selectedIngredients.contains(ingredient)
-                          ? color.withValues(alpha: 0.2)
-                          : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _selectedIngredients.contains(ingredient)
-                            ? color
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+            if (_ingredientsByType.isEmpty)
+              const Text('原材料加载中或为空', style: TextStyle(color: Colors.grey))
+            else
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _ingredientsByType.entries.map((entry) {
+                  final type = entry.key;
+                  final items = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          icon,
-                          size: 16,
-                          color: _selectedIngredients.contains(ingredient)
-                              ? color
-                              : Colors.grey[600],
-                        ),
-                        const SizedBox(width: 6),
                         Text(
-                          ingredient,
+                          type,
                           style: TextStyle(
-                            fontSize: 13,
-                            color: _selectedIngredients.contains(ingredient)
-                                ? color
-                                : Colors.grey[700],
-                            fontWeight: _selectedIngredients.contains(ingredient)
-                                ? FontWeight.bold
-                                : FontWeight.w500,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: items.map((ingredient) {
+                            return GestureDetector(
+                              onTap: () => _toggleIngredient(ingredient),
+                              child: Container(
+                                key: _ingredientKeys[ingredient],
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: _selectedIngredients.contains(ingredient)
+                                      ? Colors.blue.withValues(alpha: 0.2)
+                                      : Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: _selectedIngredients.contains(ingredient)
+                                        ? Colors.blue
+                                        : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Text(
+                                  ingredient,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _selectedIngredients.contains(ingredient)
+                                        ? Colors.blue
+                                        : Colors.grey[700],
+                                    fontWeight: _selectedIngredients.contains(ingredient)
+                                        ? FontWeight.bold
+                                        : FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ],
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
+                  );
+                }).toList(),
+              ),
             const SizedBox(height: 24),
 
             // Matched Recipes Section
@@ -441,9 +389,8 @@ class _DoDishPageState extends State<DoDishPage>
                       final recipe = _matchedRecipes[index];
                       final requiredIngredients = _recipes[recipe] ?? [];
                       final matchPercentage =
-                          ((requiredIngredients.length / requiredIngredients.length) * 100)
-                              .toStringAsFixed(0);
-                      
+                          _calcMatchPercent(requiredIngredients).toStringAsFixed(0);
+
                       return _buildRecipeCard(
                         context,
                         recipe,
@@ -460,84 +407,11 @@ class _DoDishPageState extends State<DoDishPage>
           // left/top are computed from the controller-driven state. This
           // avoids placing a Positioned inside another widget (which causes
           // ParentDataWidget errors).
-          if (_animatingIngredient != null && _animationController.value > 0)
-            Builder(builder: (context) {
-              // Use easeInOutCubic for smooth motion
-              const curve = Curves.easeInOutCubic;
-              final animValue = curve.transform(_animationController.value);
-              final ingredient = _animatingIngredient!;
-              final icon = _ingredientIcons[ingredient] ?? Icons.circle;
-              final color = _ingredientColors[ingredient] ?? Colors.grey;
-
-              // Get start and end positions (global coordinates)
-              final startPos = _getIngredientPosition();
-              final endPos = _getBasketPosition();
-
-              // Interpolate position
-              final currentX = startPos.dx + (endPos.dx - startPos.dx) * animValue;
-              final currentY = startPos.dy + (endPos.dy - startPos.dy) * animValue;
-
-              // Change icon and opacity
-              const transitionPoint = 0.65; // When to switch to bowl icon
-              final isShowingBowl = animValue > transitionPoint;
-              final showBowlOpacity = isShowingBowl
-                  ? ((animValue - transitionPoint) / (1.0 - transitionPoint)).clamp(0.0, 1.0)
-                  : 0.0;
-
-              // Scale animation
-              final scale = 1.0 - (animValue * 0.4);
-
-              // Convert global coordinates to the Stack's local coordinates by
-              // using the Stack's RenderBox. The Stack is the nearest
-              // RenderBox ancestor for this Builder's context.
-              Offset localOffset = Offset(currentX, currentY);
-              try {
-                final box = context.findRenderObject() as RenderBox?;
-                if (box != null) {
-                  localOffset = box.globalToLocal(Offset(currentX, currentY));
-                }
-              } catch (e) {
-                // ignore and use global coords as fallback
-              }
-
-              return Positioned(
-                left: localOffset.dx - 20,
-                top: localOffset.dy - 20,
-                child: IgnorePointer(
-                  child: SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Transform.scale(
-                          scale: scale,
-                          child: Opacity(
-                            opacity: (1.0 - animValue * 0.3).clamp(0.0, 1.0),
-                            child: Icon(
-                              icon,
-                              color: color,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                        Transform.scale(
-                          scale: scale * 0.9,
-                          child: Opacity(
-                            opacity: showBowlOpacity,
-                            child: Icon(
-                              Icons.restaurant,
-                              color: Colors.orange.shade700,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }),
+          // 动画已关闭，不再渲染飞行动画
+          // if (_animatingIngredient != null && _animationController.value > 0)
+          //   Builder(builder: (context) {
+          //     ...
+          //   }),
         ],
       ),
     );
@@ -582,7 +456,7 @@ class _DoDishPageState extends State<DoDishPage>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '100% 匹配',
+                      '$matchPercentage% 匹配',
                       style: TextStyle(
                         color: Colors.green.shade700,
                         fontSize: 12,
@@ -607,37 +481,24 @@ class _DoDishPageState extends State<DoDishPage>
                 runSpacing: 8,
                 children: requiredIngredients.map((ingredient) {
                   final isSelected = _selectedIngredients.contains(ingredient);
-                  final icon = _ingredientIcons[ingredient] ?? Icons.circle;
-                  final color = _ingredientColors[ingredient] ?? Colors.grey;
                   
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isSelected ? color.withValues(alpha: 0.2) : Colors.grey[100],
+                      color: isSelected ? Colors.blue.withValues(alpha: 0.2) : Colors.grey[100],
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected ? color : Colors.grey[300]!,
+                        color: isSelected ? Colors.blue : Colors.grey[300]!,
                         width: isSelected ? 2 : 1,
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          icon,
-                          size: 14,
-                          color: isSelected ? color : Colors.grey[600],
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          ingredient,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isSelected ? color : Colors.grey[700],
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      ingredient,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSelected ? Colors.blue : Colors.grey[700],
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
                     ),
                   );
                 }).toList(),
