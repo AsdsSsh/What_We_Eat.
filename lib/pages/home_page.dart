@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:what_we_eat/pages/do_dish_page.dart';
+import 'package:what_we_eat/pages/my_favorite_page.dart';
+import 'package:what_we_eat/pages/recommend_page.dart';
 
 class HomePage extends StatelessWidget {
   final VoidCallback? onExplore;
@@ -51,45 +52,58 @@ class HomePage extends StatelessWidget {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      ListTile(
-                        leading: Icon(Icons.lightbulb, color: Colors.orange),
-                        title: Text('智能推荐',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('根据偏好与食材推荐菜谱。'),
-                      ),
-                      const Divider(),
-                      ListTile(
-                        leading: Icon(Icons.restaurant, color: Colors.green),
-                        title: Text('美食收藏',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('把喜欢的菜谱保存起来。'),
-                      ),
-                      const Divider(),
-                      ListTile(
-                        leading: Icon(Icons.search, color: Colors.blue),
-                        title: Text('快速搜索',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('查找附近最近的美食餐厅。'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 47, 106, 209)),
-                  onPressed: onExplore ??
-                      () => Navigator.push(
+                      // 个性化推荐
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => DoDishPage()),
-                          ),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    child: Text('开始探索',
-                        style: TextStyle(fontSize: 16, color: Colors.black)),
+                                builder: (context) => RecommendPage()),
+                          );
+                        },
+                        splashColor: Colors.green.withValues(alpha: 0.2),
+                        child: ListTile(
+                          leading: Icon(Icons.lightbulb, color: Colors.orange),
+                          title: Text('个性化推荐',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('查看我们为你提供的个性化推荐!'),
+                        ),
+                      ),
+                      const Divider(),
+                      // 食材烹饪 - 通过底部导航栏跳转
+                      InkWell(
+                        onTap: () {
+                          if (onExplore != null) {
+                            onExplore!();
+                          }
+                        },
+                        splashColor: Colors.green.withValues(alpha: 0.2),
+                        child: ListTile(
+                          leading: Icon(Icons.restaurant_menu, color: Colors.blue),
+                          title: Text('食材烹饪',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('根据你所拥有的食材给出合理的菜谱!'),
+                        ),
+                      ),
+                      const Divider(),
+                      // 美食收藏
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => MyfavoritePage()),
+                          );
+                        },
+                        splashColor: Colors.green.withValues(alpha: 0.2),
+                        child: ListTile(
+                          leading: Icon(Icons.restaurant, color: Colors.green),
+                          title: Text('美食收藏',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('你所收藏的菜谱。'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

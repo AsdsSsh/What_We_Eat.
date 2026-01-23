@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'recipe_detail_page.dart';
 import 'package:what_we_eat/database/food_database_helper.dart';
 import 'package:what_we_eat/models/food.dart';
+import 'package:what_we_eat/pages/search_detail_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -12,24 +13,67 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
 
+  // 新增：分页与刷新相关状态
+  final ScrollController _scrollController = ScrollController();
+  static const int _pageSize = 8;
+  List<Food> _allFoods = [];
+  List<Food> _visibleFoods = [];
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+
   @override
   void initState() {
     super.initState();
     _getFood();
+    _scrollController.addListener(_onScrollLoadMore);
   }
 
-  List<Food> _foodList = [];
+  // 修改：从数据库获取并初始化首屏分页数据
   void _getFood() async {
     final foods = await FoodDatabaseHelper.instance.getAllFoods();
-    setState(()  {
-      _foodList = foods;
+    setState(() {
+      _allFoods = foods;
+      _visibleFoods = foods.take(_pageSize).toList();
+      _hasMore = _visibleFoods.length < _allFoods.length;
+      _isLoadingMore = false;
     });
   }
-  
+
+  // 新增：滚动监听，接近底部时加载下一页
+  void _onScrollLoadMore() {
+    if (_isLoadingMore || !_hasMore) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 100) {
+      _loadMore();
+    }
+  }
+
+  // 新增：加载更多
+  void _loadMore() {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+
+    final nextEnd = (_visibleFoods.length + _pageSize).clamp(0, _allFoods.length);
+    final nextSlice = _allFoods.sublist(_visibleFoods.length, nextEnd);
+    setState(() {
+      _visibleFoods.addAll(nextSlice);
+      _hasMore = _visibleFoods.length < _allFoods.length;
+      _isLoadingMore = false;
+    });
+  }
+
+  // 新增：下拉刷新
+  Future<void> _refreshFoods() async {
+    await Future.delayed(const Duration(milliseconds: 250));
+    _getFood();
+  }
+
   final TextEditingController _searchController = TextEditingController();
   List<String> _searchHistory = ['番茄鸡蛋', '宫保鸡丁', '红烧肉', '酸辣汤'];
-  List<String> _searchResults = [];
-  bool _isSearching = false;
+
+  // 移除：本页不再做即时搜索列表展示
+  // List<String> _searchResults = [];
+  // bool _isSearching = false;
 
   final List<String> _popularRecipes = [
     '番茄鸡蛋',
@@ -56,65 +100,11 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose(); // 新增：释放滚动控制器
     super.dispose();
   }
 
-  void _performSearch(String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _isSearching = false;
-        _searchResults = [];
-      });
-      return;
-    }
-
-    // Add to search history if not already there
-    if (!_searchHistory.contains(query)) {
-      setState(() {
-        _searchHistory.insert(0, query);
-        if (_searchHistory.length > 10) {
-          _searchHistory.removeLast();
-        }
-      });
-    }
-
-    // Perform search (simple keyword matching)
-    final results = _popularRecipes
-        .where((recipe) => recipe.contains(query))
-        .toList();
-
-    setState(() {
-      _searchResults = results;
-      _isSearching = true;
-    });
-  }
-
-  void _clearHistory() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('清空搜索历史'),
-          content: const Text('确定要清空所有搜索历史吗？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _searchHistory.clear();
-                });
-                Navigator.pop(context);
-              },
-              child: const Text('确定'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // 移除：_performSearch / _clearHistory 在详细页处理
 
   @override
   Widget build(BuildContext context) {
@@ -122,41 +112,72 @@ class _SearchPageState extends State<SearchPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Search Bar
+            // 顶部：输入框（点击进入详细搜索页，无搜索按钮）
             Container(
               padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _performSearch,
-                decoration: InputDecoration(
-                  hintText: '搜索菜谱',
-                  hintStyle: TextStyle(color: Colors.grey[400]),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(Icons.clear, color: Colors.grey[600]),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {
-                              _isSearching = false;
-                              _searchResults = [];
-                            });
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SearchDetailPage(
+                        initialQuery: '',
+                        initialHistory: _searchHistory,
+                      ),
+                    ),
+                  );
+                },
+                child: TextField(
+                  controller: _searchController,
+                  enabled: false,
+                  decoration: InputDecoration(
+                    hintText: '搜索菜谱',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
               ),
             ),
-            // Content
+            // 中间主体：可拖动 + 下拉刷新 + 分页加载
             Expanded(
-              child: _isSearching ? _buildSearchResults() : _buildDefaultView(),
+              child: RefreshIndicator(
+                onRefresh: _refreshFoods,
+                child: GridView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.2,
+                  ),
+                  itemCount: _visibleFoods.length + (_hasMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (_hasMore && index == _visibleFoods.length) {
+                      // 底部加载指示
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue.shade700),
+                          ),
+                        ),
+                      );
+                    }
+                    final recipe = _visibleFoods[index];
+                    return _buildRecipeCard(recipe.name);
+                  },
+                ),
+              ),
             ),
           ],
         ),
@@ -164,114 +185,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildDefaultView() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Hot Recipes Section
-          const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.2,
-            ),
-            itemCount: _foodList.length,
-            itemBuilder: (context, index) {
-              final recipe = _foodList[index];
-              return _buildRecipeCard(recipe.name);
-            },
-          ),
-          const SizedBox(height: 24),
-
-          // Search History Section
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildSectionHeader('搜索历史'),
-              _searchHistory.isNotEmpty
-                  ? GestureDetector(
-                      onTap: _clearHistory,
-                      child: Text(
-                        '清空',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue.shade700,
-                        ),
-                      ),
-                    )
-                  : const SizedBox(),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _searchHistory.isEmpty
-              ? Center(
-                  child: Text(
-                    '暂无搜索历史',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  ),
-                )
-              : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _searchHistory.map((query) {
-                    return GestureDetector(
-                      onTap: () {
-                        _searchController.text = query;
-                        _performSearch(query);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          query,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchResults() {
-    return _searchResults.isEmpty
-        ? Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  '未找到相关菜谱',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                ),
-              ],
-            ),
-          )
-        : ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _searchResults.length,
-            itemBuilder: (context, index) {
-              final recipe = _searchResults[index];
-              return _buildRecipeListItem(recipe);
-            },
-          );
-  }
-
+  // 保留：卡片点击进入详情
   Widget _buildRecipeCard(String recipe) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -329,27 +243,6 @@ class _SearchPageState extends State<SearchPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildRecipeListItem(String recipe) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Icon(Icons.restaurant_menu, color: Colors.blue.shade700),
-        title: Text(recipe),
-        subtitle: Text(_recipeDetails[recipe] ?? ''),
-        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RecipeDetailPage(recipeName: recipe),
-            ),
-          );
-        },
       ),
     );
   }
