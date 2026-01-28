@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Flutter Gradle 插件必须在 Android 和 Kotlin Gradle 插件之后应用。
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -20,10 +20,10 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // TODO: 指定你自己的唯一应用 ID (https://developer.android.com/studio/build/application-id.html)。
         applicationId = "com.example.what_we_eat"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // 你可以更新以下值以匹配你的应用需求。
+        // 详情请参见: https://flutter.dev/to/review-gradle-config。
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -32,8 +32,8 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // TODO: 为 release 构建添加你自己的签名配置。
+            // 暂时使用 debug 密钥进行签名，以便 `flutter run --release` 能工作。
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -43,12 +43,12 @@ flutter {
     source = "../.."
 }
 
-// Copy APKs from Gradle output to Flutter's expected output directory so
-// `flutter` tooling can find generated APKs reliably.
-// This task is intentionally local and is not committed to version control.
+// 将 APK 从 Gradle 输出复制到 Flutter 期望的输出目录
+// 以便`flutter` 工具能可靠地找到生成的 APK。
+// 如果flutter run的时候产生问题可以尝试删除这个任务
 tasks.register("copyApkToFlutterOutput") {
     doLast {
-        // rootProject is the Android project root; the workspace root is its parent directory
+        // rootProject 是 Android 项目根目录；工作区根目录为其父目录
         val workspaceRoot = rootProject.projectDir.parentFile
         val destDir = workspaceRoot.resolve("build/app/outputs/flutter-apk")
         destDir.mkdirs()
@@ -72,10 +72,9 @@ tasks.register("copyApkToFlutterOutput") {
     }
 }
 
-// Ensure the copy runs after any assemble task (release/debug) so CI or local builds always
-// place the APK where `flutter` expects it. Use finalizedBy instead of dependsOn so the
-// copy runs after the APK is produced, and use a matching query to avoid failing
-// when a specific assemble task doesn't exist in a given build configuration.
+// 确保在任何 assemble 任务（release/debug）之后运行复制操作，这样 CI 或本地构建总是
+// 将 APK 放在 `flutter` 期望的位置。使用 finalizedBy 而不是 dependsOn，以便在 APK 生成之后运行复制，
+// 并使用匹配查询以避免在某些构建配置中某个特定的 assemble 任务不存在时失败。
 tasks.matching { it.name.startsWith("assemble") }.configureEach {
     finalizedBy("copyApkToFlutterOutput")
 }

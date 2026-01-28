@@ -21,16 +21,11 @@ class _DoDishPageState extends State<DoDishPage>
   Set<String> _selectedIngredients = {};
   List<String> _matchedRecipes = [];
   late AnimationController _animationController;
-  String? _animatingIngredient;
   final Map<String, GlobalKey> _ingredientKeys = {};
-  late GlobalKey _basketKey;
-  late GlobalKey _basketTextKey;
 
   @override
   void initState() {
     super.initState();
-    _basketKey = GlobalKey();
-    _basketTextKey = GlobalKey();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -109,35 +104,7 @@ class _DoDishPageState extends State<DoDishPage>
     });
   }
 
-  Offset _getIngredientPosition() {
-    final ingredient = _animatingIngredient;
-    if (ingredient == null) return Offset.zero;
-    try {
-      final renderBox = _ingredientKeys[ingredient]
-          ?.currentContext
-          ?.findRenderObject() as RenderBox?;
-      if (renderBox != null) {
-        return renderBox.localToGlobal(Offset.zero);
-      }
-    } catch (e) {
-      //
-    }
-    return Offset.zero;
-  }
 
-  Offset _getBasketPosition() {
-    try {
-      final renderBox =
-          _basketTextKey.currentContext?.findRenderObject() as RenderBox?;
-      if (renderBox != null) {
-        final position = renderBox.localToGlobal(Offset.zero);
-        return position + Offset(renderBox.size.width / 2, renderBox.size.height / 2);
-      }
-    } catch (e) {
-      //
-    }
-    return Offset.zero;
-  }
 
   void _updateMatchedRecipes() {
     if (_selectedIngredients.isEmpty) {

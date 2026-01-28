@@ -130,6 +130,26 @@ class FoodDatabaseHelper {
     );
   }
 
+  /// 分页获取菜谱
+  /// [limit] 每页数量
+  /// [offset] 偏移量
+  Future<List<Food>> getFoodsPaginated(int limit, int offset) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'foods',
+      limit: limit,
+      offset: offset,
+    );
+    return List.generate(maps.length, (i) => Food.fromMap(maps[i]));
+  }
+
+  /// 获取菜谱总数
+  Future<int> getFoodsCount() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM foods');
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
   // 原材料查询：确保表存在并返回全部原材料行
   Future<List<Map<String, dynamic>>> getAllRawMaterials() async {
     final db = await database;

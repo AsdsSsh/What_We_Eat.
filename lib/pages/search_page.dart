@@ -13,33 +13,43 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
 
-  // 新增：分页与刷新相关状态
+  // 分页与刷新相关状态
   final ScrollController _scrollController = ScrollController();
   static const int _pageSize = 8;
-  List<Food> _allFoods = [];
+  
+  // 移除 _allFoods，改为按需加载
   List<Food> _visibleFoods = [];
+  int _currentOffset = 0;
+  int _totalCount = 0;
   bool _isLoadingMore = false;
   bool _hasMore = true;
+  
+  // 新增：刷新锁和防抖
+  bool _isRefreshing = false;
+  DateTime? _lastRefreshTime;
+  static const Duration _refreshCooldown = Duration(seconds: 2);
 
   @override
   void initState() {
     super.initState();
-    _getFood();
+    _initLoad();
     _scrollController.addListener(_onScrollLoadMore);
   }
 
-  // 修改：从数据库获取并初始化首屏分页数据
-  void _getFood() async {
-    final foods = await FoodDatabaseHelper.instance.getAllFoods();
+  // 初始化加载：获取总数并加载第一页
+  Future<void> _initLoad() async {
+    final count = await FoodDatabaseHelper.instance.getFoodsCount();
+    final firstPage = await FoodDatabaseHelper.instance.getFoodsPaginated(_pageSize, 0);
     setState(() {
-      _allFoods = foods;
-      _visibleFoods = foods.take(_pageSize).toList();
-      _hasMore = _visibleFoods.length < _allFoods.length;
+      _totalCount = count;
+      _visibleFoods = firstPage;
+      _currentOffset = firstPage.length;
+      _hasMore = _currentOffset < _totalCount;
       _isLoadingMore = false;
     });
   }
 
-  // 新增：滚动监听，接近底部时加载下一页
+  // 滚动监听，接近底部时加载下一页
   void _onScrollLoadMore() {
     if (_isLoadingMore || !_hasMore) return;
     if (_scrollController.position.pixels >=
@@ -48,24 +58,56 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  // 新增：加载更多
-  void _loadMore() {
+  // 加载更多：从数据库取下一页
+  Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
     setState(() => _isLoadingMore = true);
 
-    final nextEnd = (_visibleFoods.length + _pageSize).clamp(0, _allFoods.length);
-    final nextSlice = _allFoods.sublist(_visibleFoods.length, nextEnd);
+    final nextPage = await FoodDatabaseHelper.instance.getFoodsPaginated(_pageSize, _currentOffset);
     setState(() {
-      _visibleFoods.addAll(nextSlice);
-      _hasMore = _visibleFoods.length < _allFoods.length;
+      _visibleFoods.addAll(nextPage);
+      _currentOffset += nextPage.length;
+      _hasMore = _currentOffset < _totalCount;
       _isLoadingMore = false;
     });
   }
 
-  // 新增：下拉刷新
+  // 下拉刷新：添加锁和防抖
   Future<void> _refreshFoods() async {
-    await Future.delayed(const Duration(milliseconds: 250));
-    _getFood();
+    // 防止重复刷新
+    if (_isRefreshing) return;
+    
+    // 防抖：限制刷新频率
+    final now = DateTime.now();
+    if (_lastRefreshTime != null && 
+        now.difference(_lastRefreshTime!) < _refreshCooldown) {
+      return;
+    }
+    
+    _isRefreshing = true;
+    _lastRefreshTime = now;
+    
+    try {
+      setState(() {
+        _visibleFoods = [];
+        _currentOffset = 0;
+        _hasMore = true;
+      });
+      
+      // 添加超时处理
+      await _initLoad().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('刷新超时，请重试')),
+            );
+          }
+        },
+      );
+    } finally {
+      _isRefreshing = false;
+    }
   }
 
   final TextEditingController _searchController = TextEditingController();
@@ -75,16 +117,6 @@ class _SearchPageState extends State<SearchPage> {
   // List<String> _searchResults = [];
   // bool _isSearching = false;
 
-  final List<String> _popularRecipes = [
-    '番茄鸡蛋',
-    '宫保鸡丁',
-    '红烧肉',
-    '酸辣汤',
-    '清蒸鱼',
-    '土豆咖喱',
-    '麻辣火锅',
-    '蛋炒饭',
-  ];
 
   final Map<String, String> _recipeDetails = {
     '番茄鸡蛋': '简单易做，适合快手早餐',
@@ -100,7 +132,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void dispose() {
     _searchController.dispose();
-    _scrollController.dispose(); // 新增：释放滚动控制器
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -247,14 +279,4 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: Colors.grey[900],
-      ),
-    );
-  }
 }
