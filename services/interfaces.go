@@ -12,19 +12,26 @@ type RecommendationService interface {
 }
 
 type UserService interface {
-	GetOrCreateUserByDevice(deviceID string) (*models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
 	GetUserChoices(userID uint) ([]models.UserChoice, error)
-	GenerateToken(userID uint, deviceID string) (string, error)
-	CreateUserAsync(deviceID string) (*models.User, error)
+}
+
+// 验证码服务接口
+type AuthService interface {
+	GenerateVerificationCode(email string) error
+	VerifyCode(email, code string) (*models.User, bool, error)
+	GenerateTokenByEmail(userID uint, email string) (string, error)
 }
 
 // 全局服务实例
 var (
 	RecommendationRepo RecommendationService
 	UserRepo           UserService
+	AuthRepo           AuthService
 )
 
 func InitServices() {
 	RecommendationRepo = &recommendationServiceImpl{}
 	UserRepo = &userServiceImpl{}
+	AuthRepo = &authServiceImpl{}
 }

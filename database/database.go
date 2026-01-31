@@ -29,6 +29,7 @@ func InitDB() {
 		&models.FoodItem{},
 		&models.UserChoice{},
 		&models.NutritionTag{},
+		&models.VerificationCode{},
 	)
 
 	if err != nil {

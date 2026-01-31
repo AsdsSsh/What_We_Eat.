@@ -15,12 +15,9 @@ func SetupRouter() *gin.Engine {
 	// API v1 路由组
 	api := r.Group("/api")
 	{
-		// 用户相关
-		userGroup := api.Group("/user")
-		{
-			userGroup.POST("/register", handlers.RegisterUser)
-			userGroup.GET("/:deviceId", handlers.GetUserByDevice)
-		}
+		// 验证码登录/注册
+		api.GET("/login_or_register", handlers.GetVerificationCode)
+		api.POST("/verify_code", handlers.VerifyCode)
 
 		// 推荐相关
 		recommendGroup := api.Group("/recommend")
