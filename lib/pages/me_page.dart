@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:what_we_eat/config/app_config.dart';
+import 'package:what_we_eat/pages/edit_profile_page.dart';
+import 'package:what_we_eat/pages/login_page.dart';
+import 'package:what_we_eat/pages/my_favorite_page.dart';
 import 'package:what_we_eat/pages/setting_page.dart';
 import 'package:what_we_eat/pages/about_us_page.dart';
 import 'package:what_we_eat/pages/feedback_page.dart';
+import 'package:what_we_eat/providers/auth_provider.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 
-
-class MePage extends StatelessWidget {
+class MePage extends StatefulWidget {
   const MePage({super.key});
 
   @override
+  State<MePage> createState() => _MePageState();
+}
+
+class _MePageState extends State<MePage> {
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final isLoggedIn = AuthProvider().isLoggedIn;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('我的'),
@@ -27,7 +37,8 @@ class MePage extends StatelessWidget {
             child: Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 18,
-              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+              color:
+                  isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
             ),
           ),
           onPressed: () => Navigator.pop(context),
@@ -40,71 +51,200 @@ class MePage extends StatelessWidget {
           children: [
             // User Profile Card
             Container(
-              padding: const EdgeInsets.all(20),
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
                 borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
                 boxShadow: AppTheme.elevatedShadow,
               ),
-              child: Row(
+              child: Column(
                 children: [
+                  // 顶部模糊背景
                   Container(
-                    width: 72,
-                    height: 72,
+                    height: 100,
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.green.shade200,
+                          Colors.orange.shade200,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.person_rounded,
-                      size: 40,
-                      color: Colors.white,
-                    ),
+                    child: isLoggedIn
+                        ? Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const EditProfilePage(),
+                                    ),
+                                  );
+                                  if (result == true) {
+                                    setState(() {});
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.edit_rounded,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : null,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
+                  // 头像和用户信息
+                  Transform.translate(
+                    offset: const Offset(0, -40),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          '美食爱好者',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '探索美食，享受生活',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.85),
+                        // 头像
+                        GestureDetector(
+                          onTap: isLoggedIn
+                              ? () async {
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const EditProfilePage(),
+                                    ),
+                                  );
+                                  if (result == true) {
+                                    setState(() {});
+                                  }
+                                }
+                              : null,
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppTheme.surfaceDark
+                                  : AppTheme.surfaceLight,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: AppTheme.cardShadow,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Icon(
+                                Icons.person_rounded,
+                                size: 50,
+                                color: isDark
+                                    ? AppTheme.textSecondaryDark
+                                    : AppTheme.textSecondaryLight,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.restaurant_rounded, size: 14, color: Colors.white),
-                              SizedBox(width: 4),
-                              Text(
-                                '已使用 15 次',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                        // 用户名
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              isLoggedIn ? (AuthProvider().userName ?? '用户') : '未登录',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: isDark
+                                    ? AppTheme.textPrimaryDark
+                                    : AppTheme.textPrimaryLight,
+                              ),
+                            ),
+                            if (isLoggedIn) ...[
+                              const SizedBox(width: 6),
+                              Icon(
+                                Icons.verified_rounded,
+                                size: 18,
+                                color: Colors.grey.shade400,
                               ),
                             ],
-                          ),
+                          ],
                         ),
+                        const SizedBox(height: 4),
+                        // 用户ID 或 登录按钮
+                        if (isLoggedIn)
+                          Text(
+                            '@${AuthProvider().email ?? 'unknown'}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDark
+                                  ? AppTheme.textSecondaryDark
+                                  : AppTheme.textSecondaryLight,
+                            ),
+                          )
+                        else
+                          GestureDetector(
+                            onTap: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginPage(),
+                                ),
+                              );
+                              if (result == true) {
+                                setState(() {});
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.login_rounded,
+                                    size: 16,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '登录 / 注册',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppTheme.primaryColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        // 统计信息（仅登录后显示）
+                        if (isLoggedIn)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildStatItem('0', '收藏', isDark, onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const MyfavoritePage()),
+                                );
+                              }),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -116,7 +256,7 @@ class MePage extends StatelessWidget {
             // Menu Section
             _buildSectionTitle('功能菜单', isDark),
             const SizedBox(height: 12),
-            
+
             _buildMenuCard(
               context,
               isDark,
@@ -129,7 +269,8 @@ class MePage extends StatelessWidget {
                   subtitle: '应用偏好设置',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SettingPage()),
+                    MaterialPageRoute(
+                        builder: (context) => const SettingPage()),
                   ),
                   isDark: isDark,
                 ),
@@ -142,22 +283,12 @@ class MePage extends StatelessWidget {
                   subtitle: '了解应用信息',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const AboutUsPage()),
+                    MaterialPageRoute(
+                        builder: (context) => const AboutUsPage()),
                   ),
                   isDark: isDark,
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Other options section
-            _buildSectionTitle('其他', isDark),
-            const SizedBox(height: 12),
-            
-            _buildMenuCard(
-              context,
-              isDark,
-              children: [
+                _buildDivider(isDark),
                 _buildMenuItem(
                   context,
                   icon: Icons.feedback_rounded,
@@ -166,16 +297,9 @@ class MePage extends StatelessWidget {
                   subtitle: '帮助我们改进应用',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const FeedbackPage()),
+                    MaterialPageRoute(
+                        builder: (context) => const FeedbackPage()),
                   ),
-                  isDark: isDark,
-                ),
-                _buildDivider(isDark),
-                _buildInfoItem(
-                  icon: Icons.verified_rounded,
-                  iconColor: Colors.purple,
-                  title: '版本号',
-                  value: 'v0.0.1',
                   isDark: isDark,
                 ),
               ],
@@ -185,9 +309,11 @@ class MePage extends StatelessWidget {
             // Footer
             Center(
               child: Text(
-                '© 2024 吃了么',
+                AppConfig.trademark,
                 style: TextStyle(
-                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                  color: isDark
+                      ? AppTheme.textSecondaryDark
+                      : AppTheme.textSecondaryLight,
                   fontSize: 12,
                 ),
               ),
@@ -204,13 +330,15 @@ class MePage extends StatelessWidget {
       style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+        color:
+            isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
         letterSpacing: 0.5,
       ),
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, bool isDark, {required List<Widget> children}) {
+  Widget _buildMenuCard(BuildContext context, bool isDark,
+      {required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
@@ -261,7 +389,8 @@ class MePage extends StatelessWidget {
         subtitle,
         style: TextStyle(
           fontSize: 13,
-          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+          color:
+              isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
         ),
       ),
       trailing: Icon(
@@ -271,35 +400,42 @@ class MePage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoItem({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String value,
-    required bool isDark,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: iconColor, size: 22),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontWeight: FontWeight.w500,
-          color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
-        ),
-      ),
-      trailing: Text(
-        value,
-        style: TextStyle(
-          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+  Widget _buildStatItem(String value, String label, bool isDark,
+      {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark
+                    ? AppTheme.textPrimaryDark
+                    : AppTheme.textPrimaryLight,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondaryLight,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
+            ),
+          ],
         ),
       ),
     );

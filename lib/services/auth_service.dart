@@ -1,27 +1,34 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:what_we_eat/config/api_config.dart';
 
 class AuthService {
-  static const _tokenKey = 'authToken';
 
-  static Future<String?> ensureAnonymousSession(String deviceId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(_tokenKey);
-    if (cached?.isNotEmpty == true) return cached;
 
-    final uri = Uri.parse('http://localhost:8080/api/user/register');
-    final resp = await http
-        .post(uri, body: jsonEncode({'deviceId': deviceId}), headers: {'Content-Type': 'application/json'})
-        .timeout(const Duration(seconds: 10));
-
-    if (resp.statusCode == 200) {
-      final token = jsonDecode(resp.body)['token'] as String?;
-      if (token != null) {
-        await prefs.setString(_tokenKey, token);
-      }
-      return token;
+  static Future<void> getVerificationCode({required String email}) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/api/login_or_register?email=$email'),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to login or register');
     }
-    return null;
   }
+
+
+  static Future<void> loginWithCode({required String email, required String code}) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/api/verify_code'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'email': email, 'code': code}),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final token = data['token'] as String;
+      print(token);
+    } else {
+      throw Exception('Failed to verify code');
+    }
+  }
+
+
 }

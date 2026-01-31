@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:what_we_eat/models/food.dart';
 
 
 class RecipeDetailPage extends StatefulWidget {
-  final String recipeName;
+  final Food recipeInfo;
 
   const RecipeDetailPage({
     super.key,
-    required this.recipeName,
+    required this.recipeInfo,
   });
 
   @override
@@ -15,85 +16,6 @@ class RecipeDetailPage extends StatefulWidget {
 
 
 class _RecipeDetailPageState extends State<RecipeDetailPage> {
-  // Recipe database with detailed information
-  final Map<String, Map<String, dynamic>> _recipeDatabase = {
-    '番茄鸡蛋': {
-      'description': '简单易做，适合快手早餐',
-      'ingredients': ['番茄 2个', '鸡蛋 3个', '油 适量', '盐 适量'],
-      'steps': [
-        '1. 番茄切块，鸡蛋打入碗中搅拌',
-        '2. 热锅下油，炒香番茄块',
-        '3. 加入鸡蛋液，快速翻炒',
-        '4. 加盐调味，出锅前滴几滴醋',
-      ],
-    },
-    '宫保鸡丁': {
-      'description': '经典川菜，酸辣开胃',
-      'ingredients': ['鸡肉 300g', '花生 100g', '辣椒 2个', '酱油 3勺', '糖 1勺'],
-      'steps': [
-        '1. 鸡肉切丁，用酱油腌制15分钟',
-        '2. 花生炒香，辣椒切段',
-        '3. 热锅下油，炒鸡肉至变色',
-        '4. 加入花生、辣椒，翻炒均匀',
-        '5. 加糖调味，淋上酱油',
-      ],
-    },
-    '红烧肉': {
-      'description': '家常菜，肥而不腻',
-      'ingredients': ['猪肉 500g', '酱油 4勺', '糖 2勺', '生姜 3片', '大蒜 3瓣'],
-      'steps': [
-        '1. 猪肉切块，焯水去血沫',
-        '2. 热锅下油，炒糖至焦香',
-        '3. 放入猪肉块翻炒至上色',
-        '4. 加生姜、大蒜、酱油和清水',
-        '5. 炖煮30分钟至肉软',
-        '6. 大火收汁即可',
-      ],
-    },
-    '清蒸鱼': {
-      'description': '清淡健康，保留鱼鲜',
-      'ingredients': ['鱼 1条', '生姜 3片', '葱 2根', '酱油 2勺', '油 1勺'],
-      'steps': [
-        '1. 鱼洗净，放入蒸盘，撒盐',
-        '2. 铺上生姜片和葱段',
-        '3. 水烧开，放入蒸15分钟',
-        '4. 取出后淋上酱油和热油',
-      ],
-    },
-    '酸辣汤': {
-      'description': '暖胃汤品，营养丰富',
-      'ingredients': ['豆腐 200g', '醋 3勺', '辣椒 2个', '盐 适量', '生姜 2片'],
-      'steps': [
-        '1. 豆腐切块，各食材准备好',
-        '2. 热汤锅，加入豆腐块',
-        '3. 加入辣椒、生姜烧开',
-        '4. 倒入醋，调整口味',
-        '5. 煮2分钟后出锅',
-      ],
-    },
-    '土豆咖喱': {
-      'description': '异域风味，简单易做',
-      'ingredients': ['土豆 2个', '洋葱 1个', '油 2勺', '盐 适量', '咖喱粉 2勺'],
-      'steps': [
-        '1. 土豆、洋葱切块',
-        '2. 热锅下油，炒洋葱至香',
-        '3. 加入土豆块翻炒',
-        '4. 加入咖喱粉和清水',
-        '5. 煮20分钟至土豆软',
-      ],
-    },
-    '蛋炒饭': {
-      'description': '快手主食，简单美味',
-      'ingredients': ['米 2碗', '鸡蛋 2个', '油 2勺', '盐 适量', '葱 1根'],
-      'steps': [
-        '1. 鸡蛋打散，米饭准备好',
-        '2. 热锅下油，炒鸡蛋至半熟',
-        '3. 加入米饭快速翻炒',
-        '4. 加盐调味',
-        '5. 最后加葱段出锅',
-      ],
-    },
-  };
 
   // Sample nearby restaurants
   final List<Map<String, String>> _nearbyRestaurants = [
@@ -129,11 +51,10 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final recipe = _recipeDatabase[widget.recipeName] ?? {};
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.recipeName),
+        title: Text(widget.recipeInfo.name),
         backgroundColor: const Color.fromARGB(255, 47, 106, 209),
         elevation: 0,
       ),
@@ -172,7 +93,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                 children: [
                   // Basic info
                   Text(
-                    widget.recipeName,
+                    widget.recipeInfo.name,
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -180,7 +101,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    recipe['description'] ?? '',
+                    widget.recipeInfo.description,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -194,14 +115,14 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
 
                   // Ingredients section
                   Text(
-                    '食材 (${recipe['ingredients']?.length ?? 0})',
+                    '食材 (${widget.recipeInfo.ingredients.length})',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...(recipe['ingredients'] as List<String>?)?.map((ingredient) {
+                  ...widget.recipeInfo.ingredients.map((ingredient) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Row(
@@ -216,20 +137,19 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                             ],
                           ),
                         );
-                      }).toList() ??
-                      [],
+                      }).toList(),
                   const SizedBox(height: 24),
 
                   // Steps section
                   Text(
-                    '做法 (${recipe['steps']?.length ?? 0}步)',
+                    '做法 (${widget.recipeInfo.steps.length}步)',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...(recipe['steps'] as List<String>?)?.asMap().entries.map((entry) {
+                  ...widget.recipeInfo.steps.asMap().entries.map((entry) {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: Row(
@@ -262,16 +182,8 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                             ],
                           ),
                         );
-                      }).toList() ??
-                      [],
+                      }).toList(),
                   const SizedBox(height: 24),
-
-                  // Nutrition info - REMOVED
-                  // Tips - REMOVED
-
-                  const SizedBox(height: 32),
-
-                  // Nearby restaurants section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

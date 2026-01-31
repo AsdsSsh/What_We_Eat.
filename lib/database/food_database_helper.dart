@@ -111,6 +111,7 @@ class FoodDatabaseHelper {
     return null;
   }
 
+
   Future<int> updateFood(Food food) async {
     final db = await database;
     return await db.update(

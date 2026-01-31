@@ -97,41 +97,13 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Logo container with glow effect
-                        Container(
-                          width: 140,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(35),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                blurRadius: 30,
-                                spreadRadius: 5,
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(28),
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              color: Colors.white,
-                            ),
-                          ),
+                        // Logo icon
+                        Image.asset(
+                          'assets/images/logo.png',
+                          width: 180,
+                          height: 180,
+                          color: Colors.white,
                         ),
-                        const SizedBox(height: 28),
-                        // App name
-                        const Text(
-                          '吃了么',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 4,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
                         // Tagline
                       ],
                     ),

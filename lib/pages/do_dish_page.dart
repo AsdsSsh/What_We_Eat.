@@ -13,12 +13,10 @@ class DoDishPage extends StatefulWidget {
 
 class _DoDishPageState extends State<DoDishPage>
     with TickerProviderStateMixin {
-  // Available ingredients (改为动态，从数据库读取)
   List<String> _allIngredients = [];
   // 按类型分组的原材料
   Map<String, List<String>> _ingredientsByType = {};
-  // Recipes with required ingredients（改为动态加载）
-  Map<String, List<String>> _recipes = {};
+  Map<String, Food> _foodMap = {};  // 移除 _recipes，只保留这个
   Set<String> _selectedIngredients = {};
   List<String> _matchedRecipes = [];
   late AnimationController _animationController;
@@ -79,11 +77,11 @@ class _DoDishPageState extends State<DoDishPage>
   Future<void> _loadRecipesFromDb() async {
     try {
       final List<Food> foods = await FoodDatabaseHelper.instance.getAllFoods();
-      final Map<String, List<String>> map = {
-        for (final f in foods) f.name: List<String>.from(f.ingredients)
+      final Map<String, Food> foodMap = {
+        for (final f in foods) f.name: f
       };
       setState(() {
-        _recipes = map;
+        _foodMap = foodMap;
         _updateMatchedRecipes();
       });
     } catch (e) {
@@ -113,9 +111,9 @@ class _DoDishPageState extends State<DoDishPage>
       _matchedRecipes = [];
       return;
     }
-    _matchedRecipes = _recipes.entries
+    _matchedRecipes = _foodMap.entries
         .where((entry) {
-          final requiredSet = Set<String>.from(entry.value);
+          final requiredSet = Set<String>.from(entry.value.ingredients);
           return _selectedIngredients.every((ingredient) => requiredSet.contains(ingredient));
         })
         .map((entry) => entry.key)
@@ -427,7 +425,8 @@ class _DoDishPageState extends State<DoDishPage>
                               itemCount: _matchedRecipes.length,
                               itemBuilder: (context, index) {
                                 final recipe = _matchedRecipes[index];
-                                final requiredIngredients = _recipes[recipe] ?? [];
+                                final food = _foodMap[recipe];
+                                final requiredIngredients = food?.ingredients ?? [];
                                 final matchPercentage =
                                     _calcMatchPercent(requiredIngredients).toStringAsFixed(0);
                                 return _buildRecipeCard(
@@ -551,12 +550,15 @@ class _DoDishPageState extends State<DoDishPage>
         child: InkWell(
           onTap: () {
             if (!mounted) return;
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RecipeDetailPage(recipeName: recipeName),
-              ),
-            );
+            final food = _foodMap[recipeName];
+            if (food != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RecipeDetailPage(recipeInfo: food),
+                ),
+              );
+            }
           },
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           child: Padding(

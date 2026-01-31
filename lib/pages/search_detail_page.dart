@@ -210,7 +210,7 @@ class _SearchDetailPageState extends State<SearchDetailPage> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => RecipeDetailPage(recipeName: f.name)),
+                            MaterialPageRoute(builder: (_) => RecipeDetailPage(recipeInfo: f)),
                           );
                         },
                       ),

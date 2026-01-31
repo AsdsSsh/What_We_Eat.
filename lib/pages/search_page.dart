@@ -216,7 +216,7 @@ class _SearchPageState extends State<SearchPage> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 0.85,
+                    childAspectRatio: 0.82,
                   ),
                   itemCount: _visibleFoods.length + (_hasMore ? 1 : 0),
                   itemBuilder: (context, index) {
@@ -264,7 +264,7 @@ class _SearchPageState extends State<SearchPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => RecipeDetailPage(recipeName: recipe.name),
+            builder: (context) => RecipeDetailPage(recipeInfo: recipe),
           ),
         );
       },
@@ -293,7 +293,7 @@ class _SearchPageState extends State<SearchPage> {
               child: Center(
                 child: Icon(
                   Icons.restaurant_menu_rounded,
-                  size: 40,
+                  size: 36,
                   color: Colors.white.withValues(alpha: 0.9),
                 ),
               ),
@@ -323,7 +323,7 @@ class _SearchPageState extends State<SearchPage> {
                           fontSize: 12,
                           color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
                         ),
-                        maxLines: 2,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

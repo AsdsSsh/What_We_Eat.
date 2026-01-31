@@ -1,12 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/pages/splash_screen.dart';
 import 'package:what_we_eat/pages/setting_page.dart' show appThemeModeNotifier;
-import 'package:what_we_eat/services/device_id.dart';
-import 'package:what_we_eat/services/auth_service.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 
 
@@ -26,23 +22,11 @@ Future<void> main() async {
   final savedDark = prefs.getBool('darkModeEnabled') ?? false;
   appThemeModeNotifier.value = savedDark ? ThemeMode.dark : ThemeMode.light;
 
-  // 获取或创建设备唯一标识符
-  final deviceId = await getOrCreateDeviceId();
-  
-  runApp(MyApp(deviceId: deviceId));
-  // 异步确保匿名会话，不阻塞主线程
-  unawaited(
-    AuthService.ensureAnonymousSession(deviceId).catchError((e, st) {
-      print('匿名注册失败: $e');
-      return null;
-    }),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key , required this.deviceId});
-
-  final String deviceId;
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {

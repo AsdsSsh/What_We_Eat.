@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:what_we_eat/components/bottom_nav_bar.dart';
+import 'package:what_we_eat/config/app_config.dart';
 import 'package:what_we_eat/pages/do_dish_page.dart';
 import 'package:what_we_eat/pages/home_page.dart';
 import 'package:what_we_eat/pages/me_page.dart';
@@ -120,29 +121,11 @@ class _MainPageState extends State<MainPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 70,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  '吃了么',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Image.asset(
+                  'assets/images/logo.png',
+                  width: 100,
+                  height: 100,
+                  color: Colors.white,
                 ),
               ],
             ),
@@ -209,7 +192,7 @@ class _MainPageState extends State<MainPage> {
           Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              '版本 0.0.1',
+              AppConfig.versionText,
               style: TextStyle(
                 color: isDark 
                     ? AppTheme.textSecondaryDark 

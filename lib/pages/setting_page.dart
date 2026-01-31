@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:what_we_eat/config/app_config.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 
 final ValueNotifier<ThemeMode> appThemeModeNotifier =
@@ -134,7 +135,7 @@ class _SettingPageState extends State<SettingPage> {
                   icon: Icons.info_rounded,
                   iconColor: AppTheme.primaryColor,
                   title: '应用版本',
-                  value: 'v0.0.1',
+                  value: AppConfig.fullVersion,
                   isDark: isDark,
                 ),
                 _buildDivider(isDark),
