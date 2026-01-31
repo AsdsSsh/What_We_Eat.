@@ -1,15 +1,27 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/pages/splash_screen.dart';
 import 'package:what_we_eat/pages/setting_page.dart' show appThemeModeNotifier;
 import 'package:what_we_eat/services/device_id.dart';
 import 'package:what_we_eat/services/auth_service.dart';
+import 'package:what_we_eat/theme/app_theme.dart';
 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 设置状态栏样式
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    ),
+  );
+  
   final prefs = await SharedPreferences.getInstance();
   final savedDark = prefs.getBool('darkModeEnabled') ?? false;
   appThemeModeNotifier.value = savedDark ? ThemeMode.dark : ThemeMode.light;
@@ -39,15 +51,11 @@ class MyApp extends StatelessWidget {
       builder: (context, mode, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
+          title: '吃了么',
           home: const SplashScreen(),
           themeMode: mode,
-          theme: ThemeData.light().copyWith(
-            scaffoldBackgroundColor: Colors.grey[300],
-          ),
-          darkTheme: ThemeData.dark().copyWith(
-            scaffoldBackgroundColor: Colors.grey[900],
-            cardColor: Colors.grey[850],
-          ),
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
         );
       },
     );

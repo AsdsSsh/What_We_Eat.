@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:what_we_eat/theme/app_theme.dart';
 
 final ValueNotifier<ThemeMode> appThemeModeNotifier =
     ValueNotifier<ThemeMode>(ThemeMode.light);
@@ -15,15 +16,6 @@ class SettingPage extends StatefulWidget {
 class _SettingPageState extends State<SettingPage> {
   bool _notificationEnabled = true;
   bool _darkModeEnabled = false;
-  bool _saveFavorites = true;
-  String _servingSize = '2人份';
-
-  ThemeData get _currentTheme => _darkModeEnabled
-      ? ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: Colors.grey[900],
-          cardColor: Colors.grey[850],
-        )
-      : ThemeData.light();
 
   @override
   void initState() {
@@ -43,266 +35,326 @@ class _SettingPageState extends State<SettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedTheme(
-      data: _currentTheme,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('设置'),
-          backgroundColor: const Color.fromARGB(255, 47, 106, 209),
-        ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Notification Section
-              _buildSectionTitle('通知设置'),
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                elevation: 1,
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: Icon(Icons.notifications, color: Colors.blue.shade700),
-                      title: const Text('推送通知'),
-                      subtitle: const Text('接收菜谱推荐和应用更新'),
-                      trailing: Switch(
-                        value: _notificationEnabled,
-                        onChanged: (value) {
-                          setState(() {
-                            _notificationEnabled = value;
-                          });
-                        },
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: Icon(Icons.alarm, color: Colors.orange.shade700),
-                      title: const Text('每日推荐'),
-                      subtitle: const Text('每天上午 12:00 推送菜谱建议'),
-                      enabled: _notificationEnabled,
-                      trailing: Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: _notificationEnabled ? Colors.grey[400] : Colors.grey[300],
-                      ),
-                      onTap: _notificationEnabled
-                          ? () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('推送时间已设置为 12:00')),
-                            );
-                          }
-                        : null,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Display Section
-              _buildSectionTitle('显示设置'),
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                elevation: 1,
-                child: ListTile(
-                  leading: Icon(Icons.dark_mode, color: Colors.grey.shade700),
-                  title: const Text('深色模式'),
-                  subtitle: const Text('保护眼睛的暗色主题'),
-                  trailing: Switch(
-                    value: _darkModeEnabled,
-                    onChanged: (value) async {
-                      setState(() {
-                        _darkModeEnabled = value;
-                      });
-                      appThemeModeNotifier.value =
-                          value ? ThemeMode.dark : ThemeMode.light;
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('darkModeEnabled', value);
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Food Preferences Section
-              _buildSectionTitle('食物偏好'),
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                elevation: 1,
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: Icon(Icons.people, color: Colors.green.shade700),
-                      title: const Text('默认份量'),
-                      subtitle: Text(_servingSize),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-                      onTap: () => _showServingSizeDialog(),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: Icon(Icons.bookmark, color: Colors.red.shade700),
-                      title: const Text('保存收藏'),
-                      subtitle: const Text('自动保存你喜欢的菜谱'),
-                      trailing: Switch(
-                        value: _saveFavorites,
-                        onChanged: (value) {
-                          setState(() {
-                            _saveFavorites = value;
-                          });
-                        },
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: Icon(Icons.local_fire_department, color: Colors.orange.shade700),
-                      title: const Text('饮食限制'),
-                      subtitle: const Text('设置不食用的食材'),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('正在加载饮食限制...')),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // App Info Section
-              _buildSectionTitle('应用信息'),
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                elevation: 1,
-                child: Column(
-                  children: [
-                    const ListTile(
-                      leading: Icon(Icons.info, color: Colors.blue),
-                      title: Text('应用版本'),
-                      subtitle: Text('v0.0.3'),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: Icon(Icons.storage, color: Colors.grey.shade700),
-                      title: const Text('缓存大小'),
-                      subtitle: const Text('约 2.5 MB'),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-                      onTap: () {
-                        _showClearCacheDialog();
-                      },
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: Icon(Icons.language, color: Colors.purple.shade700),
-                      title: const Text('语言'),
-                      subtitle: const Text('简体中文'),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('语言设置已保存')),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Maintenance Section
-              _buildSectionTitle('维护'),
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                elevation: 1,
-                child: ListTile(
-                  leading: Icon(Icons.delete_outline, color: Colors.red.shade700),
-                  title: const Text('清空所有数据'),
-                  subtitle: const Text('删除本地保存的所有数据（不可恢复）'),
-                  trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-                  onTap: () {
-                    _showClearAllDataDialog();
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Footer
-              Center(
-                child: Text(
-                  '© 2024 今天吃什么？',
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('设置'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+            ),
           ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Notification Section
+            _buildSectionTitle('通知设置', isDark),
+            _buildSettingsCard(
+              isDark,
+              children: [
+                _buildSwitchTile(
+                  icon: Icons.notifications_rounded,
+                  iconColor: AppTheme.primaryColor,
+                  title: '推送通知',
+                  subtitle: '接收菜谱推荐和应用更新',
+                  value: _notificationEnabled,
+                  onChanged: (value) {
+                    setState(() {
+                      _notificationEnabled = value;
+                    });
+                  },
+                  isDark: isDark,
+                ),
+                _buildDivider(isDark),
+                _buildNavigationTile(
+                  icon: Icons.schedule_rounded,
+                  iconColor: AppTheme.accentOrange,
+                  title: '每日推荐',
+                  subtitle: '每天上午 12:00 推送菜谱建议',
+                  enabled: _notificationEnabled,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('推送时间已设置为 12:00')),
+                    );
+                  },
+                  isDark: isDark,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Display Section
+            _buildSectionTitle('显示设置', isDark),
+            _buildSettingsCard(
+              isDark,
+              children: [
+                _buildSwitchTile(
+                  icon: Icons.dark_mode_rounded,
+                  iconColor: isDark ? Colors.amber : Colors.indigo,
+                  title: '深色模式',
+                  subtitle: '保护眼睛的暗色主题',
+                  value: _darkModeEnabled,
+                  onChanged: (value) async {
+                    setState(() {
+                      _darkModeEnabled = value;
+                    });
+                    appThemeModeNotifier.value =
+                        value ? ThemeMode.dark : ThemeMode.light;
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('darkModeEnabled', value);
+                  },
+                  isDark: isDark,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // App Info Section
+            _buildSectionTitle('应用信息', isDark),
+            _buildSettingsCard(
+              isDark,
+              children: [
+                _buildInfoTile(
+                  icon: Icons.info_rounded,
+                  iconColor: AppTheme.primaryColor,
+                  title: '应用版本',
+                  value: 'v0.0.1',
+                  isDark: isDark,
+                ),
+                _buildDivider(isDark),
+                _buildNavigationTile(
+                  icon: Icons.storage_rounded,
+                  iconColor: Colors.grey,
+                  title: '缓存大小',
+                  subtitle: '约 2.5 MB',
+                  onTap: () => _showClearCacheDialog(),
+                  isDark: isDark,
+                ),
+                _buildDivider(isDark),
+                _buildNavigationTile(
+                  icon: Icons.language_rounded,
+                  iconColor: Colors.purple,
+                  title: '语言',
+                  subtitle: '简体中文',
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('语言设置已保存')),
+                    );
+                  },
+                  isDark: isDark,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Maintenance Section
+            _buildSectionTitle('维护', isDark),
+            _buildSettingsCard(
+              isDark,
+              children: [
+                _buildNavigationTile(
+                  icon: Icons.delete_outline_rounded,
+                  iconColor: AppTheme.accentRed,
+                  title: '清空所有数据',
+                  subtitle: '删除本地保存的所有数据（不可恢复）',
+                  onTap: () => _showClearAllDataDialog(),
+                  isDark: isDark,
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+
+            // Footer
+            Center(
+              child: Text(
+                '© 2024 吃了么',
+                style: TextStyle(
+                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey[900],
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+          letterSpacing: 0.5,
         ),
       ),
     );
   }
 
-  void _showServingSizeDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('选择默认份量'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: ['1人份', '2人份', '3人份', '4人份'].map((String value) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _servingSize = value;
-                    });
-                    Navigator.pop(context);
-                  },
-                  child: Row(
-                    children: [
-                      Radio<String>(
-                        value: value,
-                        // ignore: deprecated_member_use
-                        groupValue: _servingSize,
-                        // ignore: deprecated_member_use
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            setState(() {
-                              _servingSize = newValue;
-                            });
-                            Navigator.pop(context);
-                          }
-                        },
-                      ),
-                      Expanded(
-                        child: Text(value),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        );
-      },
+  Widget _buildSettingsCard(bool isDark, {required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildDivider(bool isDark) {
+    return Divider(
+      height: 1,
+      indent: 56,
+      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+    );
+  }
+
+  Widget _buildSwitchTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required bool isDark,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: iconColor, size: 22),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 13,
+          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+        ),
+      ),
+      trailing: Switch.adaptive(
+        value: value,
+        onChanged: onChanged,
+        activeTrackColor: AppTheme.primaryColor,
+      ),
+    );
+  }
+
+  Widget _buildNavigationTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool enabled = true,
+    required bool isDark,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      enabled: enabled,
+      onTap: enabled ? onTap : null,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: enabled ? 0.1 : 0.05),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          color: enabled ? iconColor : iconColor.withValues(alpha: 0.3),
+          size: 22,
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: enabled
+              ? (isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight)
+              : (isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight),
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 13,
+          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        color: enabled
+            ? (isDark ? Colors.grey.shade600 : Colors.grey.shade400)
+            : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
+      ),
+    );
+  }
+
+  Widget _buildInfoTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String value,
+    required bool isDark,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: iconColor, size: 22),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+        ),
+      ),
+      trailing: Text(
+        value,
+        style: TextStyle(
+          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+        ),
+      ),
     );
   }
 

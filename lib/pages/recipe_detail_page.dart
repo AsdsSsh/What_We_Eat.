@@ -19,9 +19,6 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   final Map<String, Map<String, dynamic>> _recipeDatabase = {
     '番茄鸡蛋': {
       'description': '简单易做，适合快手早餐',
-      'cookTime': '15分钟',
-      'difficulty': '简单',
-      'servings': '2人份',
       'ingredients': ['番茄 2个', '鸡蛋 3个', '油 适量', '盐 适量'],
       'steps': [
         '1. 番茄切块，鸡蛋打入碗中搅拌',
@@ -29,14 +26,9 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         '3. 加入鸡蛋液，快速翻炒',
         '4. 加盐调味，出锅前滴几滴醋',
       ],
-      'nutrition': '蛋白质: 12g | 热量: 180kcal | 维C: 15mg',
-      'tips': '鸡蛋要炒得嫩一点，不要过度熟',
     },
     '宫保鸡丁': {
       'description': '经典川菜，酸辣开胃',
-      'cookTime': '20分钟',
-      'difficulty': '中等',
-      'servings': '2人份',
       'ingredients': ['鸡肉 300g', '花生 100g', '辣椒 2个', '酱油 3勺', '糖 1勺'],
       'steps': [
         '1. 鸡肉切丁，用酱油腌制15分钟',
@@ -45,14 +37,9 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         '4. 加入花生、辣椒，翻炒均匀',
         '5. 加糖调味，淋上酱油',
       ],
-      'nutrition': '蛋白质: 28g | 热量: 420kcal | 脂肪: 18g',
-      'tips': '不要炒太久，保持鸡肉的嫩度',
     },
     '红烧肉': {
       'description': '家常菜，肥而不腻',
-      'cookTime': '45分钟',
-      'difficulty': '中等',
-      'servings': '3人份',
       'ingredients': ['猪肉 500g', '酱油 4勺', '糖 2勺', '生姜 3片', '大蒜 3瓣'],
       'steps': [
         '1. 猪肉切块，焯水去血沫',
@@ -62,14 +49,9 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         '5. 炖煮30分钟至肉软',
         '6. 大火收汁即可',
       ],
-      'nutrition': '蛋白质: 35g | 热量: 520kcal | 脂肪: 25g',
-      'tips': '焖煮时火不要太大，避免肉质过硬',
     },
     '清蒸鱼': {
       'description': '清淡健康，保留鱼鲜',
-      'cookTime': '18分钟',
-      'difficulty': '简单',
-      'servings': '2人份',
       'ingredients': ['鱼 1条', '生姜 3片', '葱 2根', '酱油 2勺', '油 1勺'],
       'steps': [
         '1. 鱼洗净，放入蒸盘，撒盐',
@@ -77,14 +59,9 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         '3. 水烧开，放入蒸15分钟',
         '4. 取出后淋上酱油和热油',
       ],
-      'nutrition': '蛋白质: 20g | 热量: 180kcal | Omega-3: 丰富',
-      'tips': '蒸的时候不要打开盖子，保持温度',
     },
     '酸辣汤': {
       'description': '暖胃汤品，营养丰富',
-      'cookTime': '25分钟',
-      'difficulty': '中等',
-      'servings': '3人份',
       'ingredients': ['豆腐 200g', '醋 3勺', '辣椒 2个', '盐 适量', '生姜 2片'],
       'steps': [
         '1. 豆腐切块，各食材准备好',
@@ -93,14 +70,9 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         '4. 倒入醋，调整口味',
         '5. 煮2分钟后出锅',
       ],
-      'nutrition': '蛋白质: 8g | 热量: 120kcal | 纤维: 3g',
-      'tips': '醋不要加太早，避免豆腐过硬',
     },
     '土豆咖喱': {
       'description': '异域风味，简单易做',
-      'cookTime': '30分钟',
-      'difficulty': '简单',
-      'servings': '2人份',
       'ingredients': ['土豆 2个', '洋葱 1个', '油 2勺', '盐 适量', '咖喱粉 2勺'],
       'steps': [
         '1. 土豆、洋葱切块',
@@ -109,14 +81,9 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         '4. 加入咖喱粉和清水',
         '5. 煮20分钟至土豆软',
       ],
-      'nutrition': '碳水化合物: 25g | 热量: 280kcal | 纤维: 2g',
-      'tips': '咖喱粉提前炒香更香',
     },
     '蛋炒饭': {
       'description': '快手主食，简单美味',
-      'cookTime': '12分钟',
-      'difficulty': '简单',
-      'servings': '2人份',
       'ingredients': ['米 2碗', '鸡蛋 2个', '油 2勺', '盐 适量', '葱 1根'],
       'steps': [
         '1. 鸡蛋打散，米饭准备好',
@@ -125,8 +92,6 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         '4. 加盐调味',
         '5. 最后加葱段出锅',
       ],
-      'nutrition': '碳水化合物: 40g | 蛋白质: 10g | 热量: 350kcal',
-      'tips': '米饭要用隔夜冷饭，容易散',
     },
   };
 
@@ -223,16 +188,8 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Quick info cards
-                  Row(
-                    children: [
-                      _buildInfoCard('⏱', recipe['cookTime'] ?? ''),
-                      const SizedBox(width: 12),
-                      _buildInfoCard('👨‍🍳', recipe['difficulty'] ?? ''),
-                      const SizedBox(width: 12),
-                      _buildInfoCard('🍽', recipe['servings'] ?? ''),
-                    ],
-                  ),
+                  // Quick info cards - REMOVED
+                  
                   const SizedBox(height: 24),
 
                   // Ingredients section
@@ -309,56 +266,9 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                       [],
                   const SizedBox(height: 24),
 
-                  // Nutrition info
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info, color: Colors.orange.shade700),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            '营养信息：${recipe['nutrition'] ?? ''}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.orange.shade700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  // Nutrition info - REMOVED
+                  // Tips - REMOVED
 
-                  // Tips
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.lightbulb, color: Colors.green.shade700),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            '小贴士：${recipe['tips'] ?? ''}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.green.shade700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 32),
 
                   // Nearby restaurants section
@@ -401,32 +311,6 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
         label: const Text('收藏菜谱'),
         icon: const Icon(Icons.favorite_border),
         backgroundColor: Colors.red.shade400,
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(String emoji, String label) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[700],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }

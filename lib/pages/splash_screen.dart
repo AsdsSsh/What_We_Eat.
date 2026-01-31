@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:what_we_eat/pages/main_page.dart';
+import 'package:what_we_eat/theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,6 +14,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _opacity;
   late Animation<double> _scale;
+  late Animation<double> _slideUp;
 
   @override
   void initState() {
@@ -26,18 +28,23 @@ class _SplashScreenState extends State<SplashScreen>
 
     // 透明度动画：0 → 1（前40%），保持1（中间20%），1 → 0（后40%）
     _opacity = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 4), // 淡入
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 2),          // 停留
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 4), // 淡出
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 4),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 4),
     ]).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
 
-    // 缩放动画：
-    // 淡入和停留阶段：保持 1.0（不缩放）
-    // 淡出阶段：1.0 → 0.6（轻微收缩）
+    // 缩放动画
     _scale = TweenSequence<double>([
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 6), // 前60%：不变
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.6), weight: 4), // 后40%：收缩
-    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+      TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 4),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.9), weight: 4),
+    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    // 向上滑动动画
+    _slideUp = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 30.0, end: 0.0), weight: 4),
+      TweenSequenceItem(tween: ConstantTween(0.0), weight: 6),
+    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.forward();
 
@@ -45,7 +52,13 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainPage()),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const MainPage(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 400),
+          ),
         );
       }
     });
@@ -60,24 +73,73 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0078D4),
-      body: Center(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _scale.value,
-              child: Opacity(
-                opacity: _opacity.value,
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 250,
-                  height: 250,
-                  color: Colors.white,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.primaryColor,
+              AppTheme.primaryDark,
+            ],
+          ),
+        ),
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: Offset(0, _slideUp.value),
+                child: Transform.scale(
+                  scale: _scale.value,
+                  child: Opacity(
+                    opacity: _opacity.value,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Logo container with glow effect
+                        Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(35),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                blurRadius: 30,
+                                spreadRadius: 5,
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(28),
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        // App name
+                        const Text(
+                          '吃了么',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Tagline
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

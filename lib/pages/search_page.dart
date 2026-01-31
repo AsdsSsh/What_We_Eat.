@@ -3,6 +3,7 @@ import 'recipe_detail_page.dart';
 import 'package:what_we_eat/database/food_database_helper.dart';
 import 'package:what_we_eat/models/food.dart';
 import 'package:what_we_eat/pages/search_detail_page.dart';
+import 'package:what_we_eat/theme/app_theme.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -113,22 +114,6 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   List<String> _searchHistory = ['番茄鸡蛋', '宫保鸡丁', '红烧肉', '酸辣汤'];
 
-  // 移除：本页不再做即时搜索列表展示
-  // List<String> _searchResults = [];
-  // bool _isSearching = false;
-
-
-  final Map<String, String> _recipeDetails = {
-    '番茄鸡蛋': '简单易做，适合快手早餐',
-    '宫保鸡丁': '经典川菜，酸辣开胃',
-    '红烧肉': '家常菜，肥而不腻',
-    '酸辣汤': '暖胃汤品，营养丰富',
-    '清蒸鱼': '清淡健康，保留鱼鲜',
-    '土豆咖喱': '异域风味，简单易做',
-    '麻辣火锅': '团聚必选，味道丰富',
-    '蛋炒饭': '快手主食，简单美味',
-  };
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -136,59 +121,102 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
-  // 移除：_performSearch / _clearHistory 在详细页处理
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 顶部：输入框（点击进入详细搜索页，无搜索按钮）
+            // 顶部搜索区域
             Container(
-              padding: const EdgeInsets.all(16),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SearchDetailPage(
-                        initialQuery: '',
-                        initialHistory: _searchHistory,
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '搜索菜谱',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SearchDetailPage(
+                            initialQuery: '',
+                            initialHistory: _searchHistory,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                        boxShadow: AppTheme.cardShadow,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.search_rounded,
+                            color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '搜索你想要的菜谱...',
+                            style: TextStyle(
+                              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                },
-                child: TextField(
-                  controller: _searchController,
-                  enabled: false,
-                  decoration: InputDecoration(
-                    hintText: '搜索菜谱',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   ),
-                ),
+                ],
               ),
             ),
+            
+            // 热门菜谱标题
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '共 $_totalCount 道',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            
             // 中间主体：可拖动 + 下拉刷新 + 分页加载
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _refreshFoods,
+                color: AppTheme.primaryColor,
                 child: GridView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 1.2,
+                    childAspectRatio: 0.85,
                   ),
                   itemCount: _visibleFoods.length + (_hasMore ? 1 : 0),
                   itemBuilder: (context, index) {
@@ -196,17 +224,20 @@ class _SearchPageState extends State<SearchPage> {
                       // 底部加载指示
                       return Center(
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(16),
                           child: SizedBox(
                             width: 24,
                             height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue.shade700),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.primaryColor,
+                            ),
                           ),
                         ),
                       );
                     }
                     final recipe = _visibleFoods[index];
-                    return _buildRecipeCard(recipe.name);
+                    return _buildRecipeCard(context, recipe, isDark);
                   },
                 ),
               ),
@@ -217,66 +248,110 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  // 保留：卡片点击进入详情
-  Widget _buildRecipeCard(String recipe) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RecipeDetailPage(recipeName: recipe),
-            ),
-          );
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.blue.shade100,
-                Colors.blue.shade50,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(12),
+  Widget _buildRecipeCard(BuildContext context, Food recipe, bool isDark) {
+    // 根据菜名生成渐变色
+    final colorIndex = recipe.name.hashCode % 4;
+    final gradients = [
+      [const Color(0xFF667eea), const Color(0xFF764ba2)],
+      [const Color(0xFFf093fb), const Color(0xFFf5576c)],
+      [const Color(0xFF4facfe), const Color(0xFF00f2fe)],
+      [const Color(0xFF43e97b), const Color(0xFF38f9d7)],
+    ];
+    final colors = gradients[colorIndex];
+    
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RecipeDetailPage(recipeName: recipe.name),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.restaurant_menu,
-                size: 32,
-                color: Colors.blue.shade700,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                recipe,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.grey[900],
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 顶部图标区域
+            Container(
+              height: 100,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: colors,
+                ),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppTheme.radiusLarge),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                _recipeDetails[recipe] ?? '',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
+              child: Center(
+                child: Icon(
+                  Icons.restaurant_menu_rounded,
+                  size: 40,
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
+            ),
+            // 内容区域
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      recipe.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Expanded(
+                      child: Text(
+                        recipe.description.isNotEmpty ? recipe.description : '美味佳肴',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.local_fire_department_rounded,
+                          size: 14,
+                          color: AppTheme.accentOrange,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${recipe.ingredients.length} 种食材',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-
 }

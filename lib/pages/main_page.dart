@@ -5,6 +5,7 @@ import 'package:what_we_eat/pages/home_page.dart';
 import 'package:what_we_eat/pages/me_page.dart';
 import 'package:what_we_eat/pages/search_page.dart';
 import 'package:what_we_eat/pages/setting_page.dart';
+import 'package:what_we_eat/theme/app_theme.dart';
 
 
 class MainPage extends StatefulWidget {
@@ -29,7 +30,7 @@ class _MainPageState extends State<MainPage> {
     super.initState();
     _pages = [
       HomePage(onExplore: () => _onItemTapped(1)),
-      DoDishPage(),
+      const DoDishPage(),
       const SearchPage(),
     ];
   }
@@ -57,67 +58,39 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-              ),
-              child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 300,
-                  height: 300,
-                  color: Colors.white,
-                ),
-            ),
-            ListTile(
-              leading: Icon(Icons.home),
-              title: Text('首页'),
-              onTap: () {
-                _onItemTapped(0);
-                Navigator.pop(context);
-
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.settings),
-              title: Text('设置'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingPage())
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.people),
-              title: Text('我的'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MePage())
-                );
-              },
-            )
-          ]
-        ),
-      ),
+      drawer: _buildDrawer(context, isDark),
       appBar: AppBar(
-        // title: Center(child: Text('今天吃什么？')),
+        elevation: 0,
         backgroundColor: Colors.transparent,
-        titleTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark 
+                    ? AppTheme.surfaceDark 
+                    : AppTheme.surfaceLight,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: AppTheme.cardShadow,
+              ),
+              child: Icon(
+                Icons.menu_rounded,
+                color: isDark 
+                    ? AppTheme.textPrimaryDark 
+                    : AppTheme.textPrimaryLight,
+                size: 20,
+              ),
+            ),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
       ),
+      extendBodyBehindAppBar: true,
       bottomNavigationBar: BottomNavBar(
-        onTabChange: (index) =>_onItemTapped(index),
+        onTabChange: (index) => _onItemTapped(index),
         selectedIndex: _selectedIndex,
       ),
       body: PageView(
@@ -129,7 +102,173 @@ class _MainPageState extends State<MainPage> {
         },
         children: _pages,
       ),
+    );
+  }
 
+  Widget _buildDrawer(BuildContext context, bool isDark) {
+    return Drawer(
+      backgroundColor: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+      child: Column(
+        children: [
+          // Custom Drawer Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+            decoration: const BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  '吃了么',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Menu Items
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              children: [
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.home_rounded,
+                  title: '首页',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _onItemTapped(0);
+                  },
+                  isSelected: _selectedIndex == 0,
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.settings_rounded,
+                  title: '设置',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SettingPage()),
+                    );
+                  },
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.person_rounded,
+                  title: '我的',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const MePage()),
+                    );
+                  },
+                ),
+                
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Divider(),
+                ),
+                
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.help_outline_rounded,
+                  title: '帮助与反馈',
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+          
+          // Footer
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              '版本 0.0.1',
+              style: TextStyle(
+                color: isDark 
+                    ? AppTheme.textSecondaryDark 
+                    : AppTheme.textSecondaryLight,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isSelected = false,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Material(
+        color: isSelected 
+            ? AppTheme.primaryColor.withValues(alpha: 0.1) 
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 24,
+                  color: isSelected 
+                      ? AppTheme.primaryColor 
+                      : (isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected 
+                        ? AppTheme.primaryColor 
+                        : (isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
