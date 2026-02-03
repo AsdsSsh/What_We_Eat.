@@ -22,6 +22,7 @@ What We Eat 是一款以 “食材驱动” 为核心的智能食谱推荐 App�
 - 前端: Flutter(Dart) + Provider 状态管理
 - 后端: Gin(Go)
 - 数据库: PostgreSQL + SQLite
+- MCP Server 基于[**HowToCook-mcp**](https://github.com/worryzyy/HowToCook-mcp.git)
 
 ## 🚀启动
 

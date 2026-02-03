@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:what_we_eat/models/favorite_food.dart';
 import 'package:what_we_eat/models/food.dart';
 import 'dart:convert';
 
@@ -44,6 +45,13 @@ class FoodDatabaseHelper {
         id TEXT PRIMARY KEY,
         name TEXT,
         type TEXT
+      )
+    ''');
+    await db.execute('''
+     CREATE TABLE favorite_foods(
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        description TEXT
       )
     ''');
 
@@ -163,4 +171,50 @@ class FoodDatabaseHelper {
     ''');
     return await db.query('raw_materials');
   }
+
+  /// 收藏菜谱相关操作
+  Future<void> addFavoriteFood(Food food) async {
+    final db = await database;
+    final favoriteFood = FavoriteFood(
+      id: food.id,
+      name: food.name,
+      description: food.description,
+    );
+    await db.insert(
+      'favorite_foods',
+      favoriteFood.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> removeFavoriteFood(String id) async {
+    final db = await database;
+    await db.delete(
+      'favorite_foods',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<List<FavoriteFood>> getFavoriteFoods() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('favorite_foods');
+    return List.generate(maps.length, (i) => FavoriteFood.fromMap(maps[i]));
+  }
+
+
+  Future<bool> isFoodFavorited(String id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'favorite_foods',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    return maps.isNotEmpty;
+  }
+
+
+  
+
+  /// 收藏菜谱相关操作 结束
 }

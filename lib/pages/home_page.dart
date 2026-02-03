@@ -33,9 +33,12 @@ class _HomePageState extends State<HomePage> {
     });
     appLanguageNotifier.value = saved;
   }
-  // TODO 继续完成国际化
-  // TODO 完成设置页面的实际逻辑
   // TODO 我的收藏完成
+  // TODO 个性化推荐完成
+  // TODO 用户添加自己的食谱
+  // TODO 食谱反馈
+  // TODO MCP Server 集成
+  // TODO 缓存机制
 
   String t(String key) {
     return Translations.translate(key, _selectedLanguage);

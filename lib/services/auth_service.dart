@@ -31,4 +31,15 @@ class AuthService {
   }
 
 
+
+  // 定期同步用户收藏数据到服务器
+  static Future<void> synchronizeFavorite() async {
+    //TODO 定期同步用户收藏数据到服务器
+    // 首先检查是否登录,如果未登录则不进行同步
+
+
+    //
+  }
+
+
 }

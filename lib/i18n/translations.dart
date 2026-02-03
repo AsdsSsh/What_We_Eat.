@@ -19,13 +19,18 @@ class Translations {
       'language': '语言',
       'clearAll': '清空所有数据',
       'deleteAllData': '删除本地保存的所有数据（不可恢复）',
-      
+      // 设置页面 结束
+
+
       // 语言选择对话框
       'selectLanguage': '选择语言',
       'chineseSimplified': '简体中文',
       'english': 'English',
       'cancel': '取消',
       'confirm': '确定',
+      // 语言选择对话框 结束
+
+
       
       // 清空缓存对话框
       'clearCache': '清空缓存',
@@ -34,6 +39,9 @@ class Translations {
       'languageSwitched': '语言已切换为简体中文',
       'languageSwitchedEn': 'Language switched to English',
       'timeSet': '推送时间已设置为 12:00',
+      // 清空缓存对话框 结束
+
+
 
       // 我的
       'me': '我的',
@@ -46,6 +54,9 @@ class Translations {
       'User': '用户',
       'MyFavoritesCnt': '收藏',
       'FunctionMenu': '功能菜单',
+      // 我的 结束
+
+
 
       // HomePage
       'appName': '吃了么',
@@ -59,12 +70,15 @@ class Translations {
       'Recipe': '菜谱',
       'Ingredients': '食材',
       'Possibilities': '可能',
+      // HomePage 结束
+
+
 
       // 底部导航
       'home': '首页',
       'cook': '做菜',
       'search': '搜索',
-
+      // 底部导航 结束
 
       // 做菜
       'RandomRecipe': '随机匹配',
@@ -75,13 +89,15 @@ class Translations {
       'MainIngredient': '主食',
       'Other': '其他',
       'Spices': '调料',
-        'Loading': '加载中...',
+      'Loading': '加载中...',
       'RecommendedRecipes': '推荐菜谱',
       'NoMatchingRecipes': '没有找到匹配的菜谱',
+      // 做菜 结束
+
 
       // 搜索详细页
       'InputKeywords': '输入关键词搜索菜谱',
-
+      // 搜索详情页 结束
 
       // 意见反馈
       'YourFeedbackIsImportant': '您的反馈对我们很重要',
@@ -98,7 +114,9 @@ class Translations {
       'ContentMustBeAtLeast10Characters': '内容必须至少包含10个字符',
       'SubmitFeedback': '提交反馈',
       'YourFeedbackWillHelpUsImproveTheApp': '您的反馈将帮助我们改进应用。',
+      // 意见反馈 结束
 
+      
       // 登录
       'login': '登录',
       'email': '邮箱',
@@ -114,8 +132,14 @@ class Translations {
       'login/register': '登录 / 注册',
       'UnregisteredEmailHint': '未注册的邮箱将自动创建账号',
       'VerificationCodeSent': '验证码已发送',
+      // 登录 结束
 
 
+      // 食物详情
+      'favoriteAdd': '收藏菜谱',
+      'PleaseLoginFirst': '请先登录以使用收藏功能',
+      'favoriteRemoveHint': '已收藏，可在我的收藏页面取消',
+      // 食物详情 结束
 
 
       // 关于我们
@@ -125,7 +149,7 @@ class Translations {
       'privacyPolicyContent': '我们仅在提供功能所需的范围内处理数据，不会向第三方出售个人信息。详情请参阅完整隐私政策。',
       'ViewProjectSourceCode': '查看项目源代码',
       'privacyPolicySubtitle': '了解我们的隐私政策',
-
+      // 关于我们 结束
 
 
     },
@@ -148,13 +172,16 @@ class Translations {
       'language': 'Language',
       'clearAll': 'Clear All Data',
       'deleteAllData': 'Delete all locally saved data (irreversible)',
-      
+      // 设置页面 结束
+
+
       // 语言选择对话框
       'selectLanguage': 'Select Language',
       'chineseSimplified': 'Simplified Chinese',
       'english': 'English',
       'cancel': 'Cancel',
       'confirm': 'Confirm',
+      // 语言选择对话框 结束
       
       // 清空缓存对话框
       'clearCache': 'Clear Cache',
@@ -163,6 +190,8 @@ class Translations {
       'languageSwitched': 'Language switched to Simplified Chinese',
       'languageSwitchedEn': 'Language switched to English',
       'timeSet': 'Notification time set to 12:00',
+      // 清空缓存对话框 结束
+
 
       // 我的
       'AppPreferences': 'App Preferences',
@@ -175,7 +204,7 @@ class Translations {
       'User': 'User',
       'MyFavoritesCnt': 'Favorites',
       'FunctionMenu': 'Function Menu',
-      
+      // 我的 结束
 
 
       // HomePage
@@ -190,12 +219,15 @@ class Translations {
       'Recipe': 'Recipe',
       'Ingredients': 'Ingredients',
       'Possibilities': 'Possibilities',
-
+      // HomePage 结束
 
       // 底部导航
       'home': 'Home',
       'cook': 'Cook',
       'search': 'Search',
+      // 底部导航 结束
+
+
 
       // 做菜
       'RandomRecipe': 'Random Recipe',
@@ -209,9 +241,13 @@ class Translations {
       'Loading': 'Loading...',
       'RecommendedRecipes': 'Recommended Recipes',
       'NoMatchingRecipes': 'No matching recipes found',
+      // 做菜 结束
+
+
+
       // 搜索详细页
       'InputKeywords': 'Input keywords to search recipes',
-
+      // 搜索详情页结束
 
 
       // 意见反馈
@@ -229,7 +265,7 @@ class Translations {
       'ContentMustBeAtLeast10Characters': 'Content must be at least 10 characters',
       'SubmitFeedback': 'Submit Feedback',
       'YourFeedbackWillHelpUsImproveTheApp': 'Your feedback will help us improve the app.',
-
+      // 意见反馈 结束
 
       // 登录
       'login': 'Login',
@@ -246,6 +282,15 @@ class Translations {
       'login/register': 'Login / Register',
       'UnregisteredEmailHint': 'Unregistered emails will automatically create an account',
       'VerificationCodeSent': 'Verification code sent',
+      // 登录结束
+
+
+
+      // 食物详情
+      'favoriteAdd': 'Add to Favorites',
+      'PleaseLoginFirst': 'Please log in first to use the favorite feature',
+      'favoriteRemoveHint': 'Already favorited, you can remove it in My Favorites page',
+      // 食物详情 结束
 
 
       // 关于我们
@@ -255,6 +300,7 @@ class Translations {
       'ViewProjectSourceCode': 'View Project Source Code',
       'AppDescription': 'An app that helps you quickly decide what to eat today. It offers intelligent recommendations, one-click cooking guides, and quick recipe search features.',
       'privacyPolicySubtitle': 'Learn about our privacy practices',
+      // 关于我们 结束
     },
   };
 
