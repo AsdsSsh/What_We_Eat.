@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/pages/splash_screen.dart';
 import 'package:what_we_eat/pages/setting_page.dart' show appThemeModeNotifier;
+import 'package:what_we_eat/providers/auth_provider.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 
 
@@ -22,7 +24,18 @@ Future<void> main() async {
   final savedDark = prefs.getBool('darkModeEnabled') ?? false;
   appThemeModeNotifier.value = savedDark ? ThemeMode.dark : ThemeMode.light;
 
-  runApp(const MyApp());
+  // 创建 AuthProvider 并恢复登录状态
+  final authProvider = AuthProvider();
+  await authProvider.checkLoginStatus();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: authProvider),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

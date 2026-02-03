@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:what_we_eat/providers/auth_provider.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 
@@ -17,9 +18,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    _userNameController = TextEditingController(
-      text: AuthProvider().userName ?? '',
-    );
+    _userNameController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    if (_userNameController.text.isEmpty) {
+      _userNameController.text = auth.userName ?? '';
+    }
   }
 
   @override
@@ -34,12 +42,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: 实现实际保存逻辑
       await Future.delayed(const Duration(milliseconds: 500));
 
-      AuthProvider().updateUserName(_userNameController.text);
-
       if (mounted) {
+        final auth = Provider.of<AuthProvider>(context, listen: false);
+        auth.updateUserName(_userNameController.text);
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('保存成功')),
         );
@@ -61,6 +69,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final auth = context.watch<AuthProvider>();
 
     return Scaffold(
       appBar: AppBar(
@@ -185,7 +194,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
               // 邮箱（只读）
               TextFormField(
-                initialValue: AuthProvider().email ?? '',
+                initialValue: auth.email ?? '',
                 readOnly: true,
                 decoration: InputDecoration(
                   labelText: '邮箱',

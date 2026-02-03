@@ -91,3 +91,4 @@ msic
 /web/assets/
 /web/flutter_service_worker.js
 /web/flutter_installation/
+.vscode/launch.json

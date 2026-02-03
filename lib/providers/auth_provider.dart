@@ -1,9 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthProvider extends ChangeNotifier {
   String? _token;
-  String? _phone;
   String? _userName;
   String? _userId;
   String? _email;
@@ -11,7 +11,6 @@ class AuthProvider extends ChangeNotifier {
 
   bool get isLoggedIn => _isLoggedIn;
   String? get token => _token;
-  String? get phone => _phone;
   String? get userName => _userName;
   String? get userId => _userId;
   String? get email => _email;
@@ -20,23 +19,39 @@ class AuthProvider extends ChangeNotifier {
   Future<void> checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('token');
-    _phone = prefs.getString('phone');
     _userName = prefs.getString('userName');
     _userId = prefs.getString('userId');
     _email = prefs.getString('email');
     _isLoggedIn = _token != null && _token!.isNotEmpty;
+    
+    // 调试日志
+    debugPrint('=== checkLoginStatus ===');
+    debugPrint('token: $_token');
+    debugPrint('email: $_email');
+    debugPrint('userName: $_userName');
+    debugPrint('isLoggedIn: $_isLoggedIn');
+    
     notifyListeners();
   }
 
   // 登录成功后保存状态
-  Future<void> login(String token, String phone, {required String userName}) async {
+  Future<void> login(String token, String email, {required String userName}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', token);
-    await prefs.setString('phone', phone);
-    await prefs.setString('userName', userName);
+    
+    // 确保数据被正确保存
+    final tokenSaved = await prefs.setString('token', token);
+    final emailSaved = await prefs.setString('email', email);
+    final userNameSaved = await prefs.setString('userName', userName);
+    
+    // 调试日志
+    debugPrint('=== login ===');
+    debugPrint('tokenSaved: $tokenSaved, token: $token');
+    debugPrint('emailSaved: $emailSaved, email: $email');
+    debugPrint('userNameSaved: $userNameSaved, userName: $userName');
     
     _token = token;
-    _phone = phone;
+    _email = email;
+    _userName = userName;
     _isLoggedIn = true;
     notifyListeners();
   }
@@ -45,15 +60,22 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
-    await prefs.remove('phone');
+    await prefs.remove('email');
+    await prefs.remove('userName');
+    await prefs.remove('userId');
     
     _token = null;
-    _phone = null;
+    _email = null;
+    _userName = null;
+    _userId = null;
     _isLoggedIn = false;
     notifyListeners();
   }
 
-  void updateUserName(String userName) {
+  Future<void> updateUserName(String userName) async {
     _userName = userName;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userName', userName);
+    notifyListeners();
   }
 }

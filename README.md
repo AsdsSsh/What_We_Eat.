@@ -1,4 +1,4 @@
-# 🥬🍅 吃了么(Have You Eaten) — 用你手边的食材，解锁万千美味
+# 🥬🍅 吃了么(What We Eat) — 用你手边的食材，解锁万千美味
 
 What We Eat 是一款以 “食材驱动” 为核心的智能食谱推荐 App。
 不再盲目搜索菜名，只需勾选你手头已有的食材，App 即可智能匹配出你能做的全部菜谱——减少浪费、节省开支、激发烹饪灵感！
@@ -19,8 +19,9 @@ What We Eat 是一款以 “食材驱动” 为核心的智能食谱推荐 App�
 
 ## 🛠 技术实现
 
-- 前端：Flutter（Dart） + Provider 状态管理
-- 后端：Gin（Go）
+- 前端: Flutter(Dart) + Provider 状态管理
+- 后端: Gin(Go)
+- 数据库: PostgreSQL + SQLite
 
 ## 🚀启动
 

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:what_we_eat/i18n/translations.dart';
+import 'package:what_we_eat/pages/setting_page.dart';
 import 'recipe_detail_page.dart';
 import 'package:what_we_eat/database/food_database_helper.dart';
 import 'package:what_we_eat/models/food.dart';
@@ -11,17 +14,16 @@ class DoDishPage extends StatefulWidget {
   State<DoDishPage> createState() => _DoDishPageState();
 }
 
-class _DoDishPageState extends State<DoDishPage>
-    with TickerProviderStateMixin {
+class _DoDishPageState extends State<DoDishPage> with TickerProviderStateMixin {
   List<String> _allIngredients = [];
   // 按类型分组的原材料
   Map<String, List<String>> _ingredientsByType = {};
-  Map<String, Food> _foodMap = {};  // 移除 _recipes，只保留这个
+  Map<String, Food> _foodMap = {};
   Set<String> _selectedIngredients = {};
   List<String> _matchedRecipes = [];
   late AnimationController _animationController;
   final Map<String, GlobalKey> _ingredientKeys = {};
-
+  String _selectedLanguage = 'zh';
   // 类型图标映射
   final Map<String, IconData> _typeIcons = {
     '蔬菜': Icons.eco_rounded,
@@ -31,6 +33,8 @@ class _DoDishPageState extends State<DoDishPage>
     '海鲜': Icons.set_meal_rounded,
     '其他': Icons.category_rounded,
   };
+
+  bool _compactIngredients = true; // 紧凑模式开关（默认开启）
 
   @override
   void initState() {
@@ -44,6 +48,20 @@ class _DoDishPageState extends State<DoDishPage>
     });
     _loadIngredientsFromDb();
     _loadRecipesFromDb();
+    _initLanguageFromPrefs();
+  }
+
+  Future<void> _initLanguageFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('selectedLanguage') ?? 'zh';
+    setState(() {
+      _selectedLanguage = saved;
+    });
+    appLanguageNotifier.value = saved;
+  }
+
+  String t(String key) {
+    return Translations.translate(key, _selectedLanguage);
   }
 
   Future<void> _loadIngredientsFromDb() async {
@@ -77,9 +95,7 @@ class _DoDishPageState extends State<DoDishPage>
   Future<void> _loadRecipesFromDb() async {
     try {
       final List<Food> foods = await FoodDatabaseHelper.instance.getAllFoods();
-      final Map<String, Food> foodMap = {
-        for (final f in foods) f.name: f
-      };
+      final Map<String, Food> foodMap = {for (final f in foods) f.name: f};
       setState(() {
         _foodMap = foodMap;
         _updateMatchedRecipes();
@@ -114,7 +130,8 @@ class _DoDishPageState extends State<DoDishPage>
     _matchedRecipes = _foodMap.entries
         .where((entry) {
           final requiredSet = Set<String>.from(entry.value.ingredients);
-          return _selectedIngredients.every((ingredient) => requiredSet.contains(ingredient));
+          return _selectedIngredients
+              .every((ingredient) => requiredSet.contains(ingredient));
         })
         .map((entry) => entry.key)
         .toList();
@@ -128,335 +145,272 @@ class _DoDishPageState extends State<DoDishPage>
     return (matchedCount / requiredIngredients.length) * 100;
   }
 
-  void _clearSelection() {
-    setState(() {
-      _selectedIngredients.clear();
-      _matchedRecipes = [];
-    });
-  }
-
-  void _randomMatch() {
-    if (_allIngredients.isEmpty) return;
-    final random = List<String>.from(_allIngredients)..shuffle();
-    final count = 3 + (random.length % 3);
-    setState(() {
-      _selectedIngredients = Set.from(random.take(count));
-      _updateMatchedRecipes();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 顶部操作区域
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+
+    return ValueListenableBuilder(
+        valueListenable: appLanguageNotifier,
+        builder: (context, lang, child) {
+          _selectedLanguage = lang;
+          return Scaffold(
+            body: SafeArea(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '食材烹饪',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '选择你手边的食材，发现美味菜谱',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // 操作按钮
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.primaryGradient,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                            boxShadow: AppTheme.elevatedShadow,
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _randomMatch,
-                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(Icons.shuffle_rounded, color: Colors.white, size: 20),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      '随机匹配',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
+                  // 上半部分：食材选择区域
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppTheme.surfaceDark
+                            : AppTheme.surfaceLight,
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusLarge),
+                        boxShadow: AppTheme.cardShadow,
+                      ),
+                      child: ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusLarge),
+                        child: Column(
+                          children: [
+                            // 新增：固定头部（不随滚动）
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.tune_rounded, size: 16, color: AppTheme.primaryColor),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '布局',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _compactIngredients ? '紧凑' : '常规',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  if (_selectedIngredients.isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '已选 ${_selectedIngredients.length}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppTheme.primaryColor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
+                                  const Spacer(),
+                                  Switch(
+                                    value: _compactIngredients,
+                                    onChanged: (v) => setState(() => _compactIngredients = v),
+                                    activeThumbColor: AppTheme.primaryColor,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Divider(height: 1),
+                            // 原滚动区域改为 Expanded
+                            Expanded(
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (_ingredientsByType.isEmpty)
+                                      Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(32),
+                                          child: Column(
+                                            children: [
+                                              CircularProgressIndicator(
+                                                  color: AppTheme.primaryColor),
+                                              const SizedBox(height: 16),
+                                              Text(
+                                                t('Loading'),
+                                                style: TextStyle(
+                                                  color: isDark
+                                                      ? AppTheme.textSecondaryDark
+                                                      : AppTheme.textSecondaryLight,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          // 类型分组渲染
+                                          ..._ingredientsByType.entries.map((entry) {
+                                            final type = entry.key;
+                                            final items = entry.value;
+                                            return _buildIngredientSection(context, type, items, isDark);
+                                          }).toList(),
+                                        ],
+                                      ),
                                   ],
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                            border: Border.all(
-                              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-                            ),
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _clearSelection,
-                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 下半部分：推荐菜品区域
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppTheme.surfaceDark
+                            : AppTheme.surfaceLight,
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusLarge),
+                        boxShadow: AppTheme.cardShadow,
+                      ),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
                                   children: [
                                     Icon(
-                                      Icons.clear_rounded,
-                                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                                      size: 20,
+                                      Icons.restaurant_menu_rounded,
+                                      color: AppTheme.primaryColor,
+                                      size: 22,
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      '清空选择',
+                                      t('RecommendedRecipes'),
                                       style: TextStyle(
-                                        color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? AppTheme.textPrimaryDark
+                                            : AppTheme.textPrimaryLight,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.accentGreen
+                                        .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${_matchedRecipes.length} 道',
+                                    style: TextStyle(
+                                      color: AppTheme.accentGreen,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  // 已选食材计数
-                  if (_selectedIngredients.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.check_circle_rounded,
-                            color: AppTheme.primaryColor,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '已选择 ${_selectedIngredients.length} 种食材',
-                            style: TextStyle(
-                              color: AppTheme.primaryColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
+                          Expanded(
+                            child: _matchedRecipes.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.search_off_rounded,
+                                          size: 56,
+                                          color: isDark
+                                              ? Colors.grey.shade700
+                                              : Colors.grey.shade300,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          _selectedIngredients.isEmpty
+                                              ? t('SelectIngredientsSubtitle')
+                                              : t('NoMatchingRecipes'),
+                                          style: TextStyle(
+                                            color: isDark
+                                                ? AppTheme.textSecondaryDark
+                                                : AppTheme.textSecondaryLight,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 0, 16, 16),
+                                    itemCount: _matchedRecipes.length,
+                                    itemBuilder: (context, index) {
+                                      final recipe = _matchedRecipes[index];
+                                      final food = _foodMap[recipe];
+                                      final requiredIngredients =
+                                          food?.ingredients ?? [];
+                                      final matchPercentage =
+                                          _calcMatchPercent(requiredIngredients)
+                                              .toStringAsFixed(0);
+                                      return _buildRecipeCard(
+                                        context,
+                                        recipe,
+                                        requiredIngredients,
+                                        matchPercentage,
+                                        isDark,
+                                      );
+                                    },
+                                  ),
                           ),
                         ],
                       ),
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
-
-            // 上半部分：食材选择区域
-            Expanded(
-              flex: 1,
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                  boxShadow: AppTheme.cardShadow,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_ingredientsByType.isEmpty)
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Column(
-                                children: [
-                                  CircularProgressIndicator(color: AppTheme.primaryColor),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    '加载食材中...',
-                                    style: TextStyle(
-                                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        else
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: _ingredientsByType.entries.map((entry) {
-                              final type = entry.key;
-                              final items = entry.value;
-                              return _buildIngredientSection(context, type, items, isDark);
-                            }).toList(),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 下半部分：推荐菜品区域
-            Expanded(
-              flex: 1,
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                  boxShadow: AppTheme.cardShadow,
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.restaurant_menu_rounded,
-                                color: AppTheme.primaryColor,
-                                size: 22,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '推荐菜谱',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentGreen.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${_matchedRecipes.length} 道',
-                              style: TextStyle(
-                                color: AppTheme.accentGreen,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: _matchedRecipes.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.search_off_rounded,
-                                    size: 56,
-                                    color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    _selectedIngredients.isEmpty
-                                        ? '选择食材以查看推荐菜谱'
-                                        : '没有找到匹配的菜谱',
-                                    style: TextStyle(
-                                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                              itemCount: _matchedRecipes.length,
-                              itemBuilder: (context, index) {
-                                final recipe = _matchedRecipes[index];
-                                final food = _foodMap[recipe];
-                                final requiredIngredients = food?.ingredients ?? [];
-                                final matchPercentage =
-                                    _calcMatchPercent(requiredIngredients).toStringAsFixed(0);
-                                return _buildRecipeCard(
-                                  context,
-                                  recipe,
-                                  requiredIngredients,
-                                  matchPercentage,
-                                  isDark,
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+          );
+        });
   }
 
-  Widget _buildIngredientSection(BuildContext context, String type, List<String> items, bool isDark) {
+  Widget _buildIngredientSection(
+      BuildContext context, String type, List<String> items, bool isDark) {
     final icon = _typeIcons[type] ?? Icons.category_rounded;
-    
+    final selectedInType =
+        items.where((i) => _selectedIngredients.contains(i)).length;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 头部：类型 + 统计
           Row(
             children: [
               Icon(icon, size: 18, color: AppTheme.primaryColor),
@@ -464,59 +418,199 @@ class _DoDishPageState extends State<DoDishPage>
               Text(
                 type,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                  color: isDark
+                      ? AppTheme.textPrimaryDark
+                      : AppTheme.textPrimaryLight,
                 ),
               ),
               const SizedBox(width: 8),
               Text(
-                '(${items.length})',
+                '已选 $selectedInType / 共 ${items.length}',
                 style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                  fontSize: 12,
+                  color: isDark
+                      ? AppTheme.textSecondaryDark
+                      : AppTheme.textSecondaryLight,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: items.map((ingredient) {
-              final isSelected = _selectedIngredients.contains(ingredient);
-              return GestureDetector(
-                onTap: () => _toggleIngredient(ingredient),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  key: _ingredientKeys[ingredient],
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.primaryColor
-                        : (isDark ? Colors.grey.shade800 : Colors.grey.shade100),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppTheme.primaryColor
-                          : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
-                      width: 1,
+          const SizedBox(height: 8),
+
+          // 紧凑模式：AnimatedContainer 的 BoxDecoration
+          if (_compactIngredients)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                // 目标卡片宽约 120，最少2列，最多6列
+                final crossAxisCount = (width / 120).floor().clamp(2, 6);
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: items.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 6,
+                    // 横向长条比例更紧凑
+                    childAspectRatio: 3.6,
+                  ),
+                  itemBuilder: (context, idx) {
+                    final ingredient = items[idx];
+                    final isSelected =
+                        _selectedIngredients.contains(ingredient);
+                    return GestureDetector(
+                      onTap: () => _toggleIngredient(ingredient),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        key: _ingredientKeys[ingredient],
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: isSelected
+                              ? LinearGradient(
+                                  colors: [
+                                    AppTheme.primaryColor,
+                                    AppTheme.primaryColor.withValues(alpha: 0.85),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : LinearGradient(
+                                  colors: [
+                                    isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                                    isDark ? Colors.grey.shade900 : Colors.grey.shade200,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(4),
+                            bottomLeft: Radius.circular(4),
+                            bottomRight: Radius.circular(12),
+                          ),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppTheme.primaryColor
+                                : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                            width: 0.8,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: AppTheme.primaryColor.withValues(alpha: 0.25),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : [
+                                  BoxShadow(
+                                    color: (isDark ? Colors.black : Colors.grey).withValues(alpha: 0.08),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                        ),
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            ingredient,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight),
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            )
+          // 常规模式：AnimatedContainer 的 BoxDecoration
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: items.map((ingredient) {
+                final isSelected = _selectedIngredients.contains(ingredient);
+                return GestureDetector(
+                  onTap: () => _toggleIngredient(ingredient),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    key: _ingredientKeys[ingredient],
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: isSelected
+                          ? LinearGradient(
+                              colors: [
+                                AppTheme.primaryColor,
+                                AppTheme.primaryColor.withValues(alpha: 0.85),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : LinearGradient(
+                              colors: [
+                                isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                                isDark ? Colors.grey.shade900 : Colors.grey.shade200,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(6),
+                        bottomLeft: Radius.circular(6),
+                        bottomRight: Radius.circular(16),
+                      ),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                        width: 1,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppTheme.primaryColor.withValues(alpha: 0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : [
+                              BoxShadow(
+                                color: (isDark ? Colors.black : Colors.grey).withValues(alpha: 0.08),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                    ),
+                    child: Text(
+                      ingredient,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight),
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
                     ),
                   ),
-                  child: Text(
-                    ingredient,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isSelected
-                          ? Colors.white
-                          : (isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight),
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
+                );
+              }).toList(),
+            ),
         ],
       ),
     );
@@ -535,7 +629,7 @@ class _DoDishPageState extends State<DoDishPage>
         : matchPercent >= 50
             ? AppTheme.accentOrange
             : AppTheme.primaryColor;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -575,12 +669,15 @@ class _DoDishPageState extends State<DoDishPage>
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                          color: isDark
+                              ? AppTheme.textPrimaryDark
+                              : AppTheme.textPrimaryLight,
                         ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: matchColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
@@ -612,13 +709,17 @@ class _DoDishPageState extends State<DoDishPage>
                   spacing: 6,
                   runSpacing: 6,
                   children: requiredIngredients.take(6).map((ingredient) {
-                    final isSelected = _selectedIngredients.contains(ingredient);
+                    final isSelected =
+                        _selectedIngredients.contains(ingredient);
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppTheme.primaryColor.withValues(alpha: 0.15)
-                            : (isDark ? Colors.grey.shade700 : Colors.grey.shade200),
+                            : (isDark
+                                ? Colors.grey.shade700
+                                : Colors.grey.shade200),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -639,8 +740,12 @@ class _DoDishPageState extends State<DoDishPage>
                               fontSize: 11,
                               color: isSelected
                                   ? AppTheme.primaryColor
-                                  : (isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight),
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                  : (isDark
+                                      ? AppTheme.textSecondaryDark
+                                      : AppTheme.textSecondaryLight),
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
                         ],
@@ -654,7 +759,9 @@ class _DoDishPageState extends State<DoDishPage>
                     '+${requiredIngredients.length - 6} 更多食材',
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                      color: isDark
+                          ? AppTheme.textSecondaryDark
+                          : AppTheme.textSecondaryLight,
                     ),
                   ),
                 ],

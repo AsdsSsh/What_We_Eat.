@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/config/app_config.dart';
+import 'package:what_we_eat/i18n/translations.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 
+// 主题通知器
 final ValueNotifier<ThemeMode> appThemeModeNotifier =
     ValueNotifier<ThemeMode>(ThemeMode.light);
+// 语言通知器
+final ValueNotifier<String> appLanguageNotifier =
+    ValueNotifier<String>('zh');
+
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -17,11 +23,26 @@ class SettingPage extends StatefulWidget {
 class _SettingPageState extends State<SettingPage> {
   bool _notificationEnabled = true;
   bool _darkModeEnabled = false;
+  String _selectedLanguage = 'zh';
 
   @override
   void initState() {
     super.initState();
     _initThemeFromPrefs();
+    _initLanguageFromPrefs();
+    _initNotificationFromPrefs();
+  }
+
+  String t(String key) {
+    return Translations.translate(key, _selectedLanguage);
+  }
+
+  Future<void> _initNotificationFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getBool('notificationEnabled') ?? true;
+    setState(() {
+      _notificationEnabled = saved;
+    });
   }
 
   Future<void> _initThemeFromPrefs() async {
@@ -34,13 +55,22 @@ class _SettingPageState extends State<SettingPage> {
         saved ? ThemeMode.dark : ThemeMode.light;
   }
 
+  Future<void> _initLanguageFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('selectedLanguage') ?? 'zh';
+    setState(() {
+      _selectedLanguage = saved;
+    });
+    appLanguageNotifier.value = saved;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('设置'),
+        title: Text(t('setting')),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -65,15 +95,15 @@ class _SettingPageState extends State<SettingPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Notification Section
-            _buildSectionTitle('通知设置', isDark),
+            _buildSectionTitle(t('notificationSetting'), isDark),
             _buildSettingsCard(
               isDark,
               children: [
                 _buildSwitchTile(
                   icon: Icons.notifications_rounded,
                   iconColor: AppTheme.primaryColor,
-                  title: '推送通知',
-                  subtitle: '接收菜谱推荐和应用更新',
+                  title: t('pushNotification'),
+                  subtitle: t('receiveNotification'),
                   value: _notificationEnabled,
                   onChanged: (value) {
                     setState(() {
@@ -82,34 +112,20 @@ class _SettingPageState extends State<SettingPage> {
                   },
                   isDark: isDark,
                 ),
-                _buildDivider(isDark),
-                _buildNavigationTile(
-                  icon: Icons.schedule_rounded,
-                  iconColor: AppTheme.accentOrange,
-                  title: '每日推荐',
-                  subtitle: '每天上午 12:00 推送菜谱建议',
-                  enabled: _notificationEnabled,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('推送时间已设置为 12:00')),
-                    );
-                  },
-                  isDark: isDark,
-                ),
               ],
             ),
             const SizedBox(height: 24),
 
             // Display Section
-            _buildSectionTitle('显示设置', isDark),
+            _buildSectionTitle(t('displaySetting'), isDark),
             _buildSettingsCard(
               isDark,
               children: [
                 _buildSwitchTile(
                   icon: Icons.dark_mode_rounded,
                   iconColor: isDark ? Colors.amber : Colors.indigo,
-                  title: '深色模式',
-                  subtitle: '保护眼睛的暗色主题',
+                  title: t('darkMode'),
+                  subtitle: t('protectEyes'),
                   value: _darkModeEnabled,
                   onChanged: (value) async {
                     setState(() {
@@ -127,14 +143,14 @@ class _SettingPageState extends State<SettingPage> {
             const SizedBox(height: 24),
 
             // App Info Section
-            _buildSectionTitle('应用信息', isDark),
+            _buildSectionTitle(t('appInfo'), isDark),
             _buildSettingsCard(
               isDark,
               children: [
                 _buildInfoTile(
                   icon: Icons.info_rounded,
                   iconColor: AppTheme.primaryColor,
-                  title: '应用版本',
+                  title: t('version'),
                   value: AppConfig.fullVersion,
                   isDark: isDark,
                 ),
@@ -142,7 +158,7 @@ class _SettingPageState extends State<SettingPage> {
                 _buildNavigationTile(
                   icon: Icons.storage_rounded,
                   iconColor: Colors.grey,
-                  title: '缓存大小',
+                  title: t('cacheSize'),
                   subtitle: '约 2.5 MB',
                   onTap: () => _showClearCacheDialog(),
                   isDark: isDark,
@@ -151,13 +167,9 @@ class _SettingPageState extends State<SettingPage> {
                 _buildNavigationTile(
                   icon: Icons.language_rounded,
                   iconColor: Colors.purple,
-                  title: '语言',
-                  subtitle: '简体中文',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('语言设置已保存')),
-                    );
-                  },
+                  title: t('language'),
+                  subtitle: _selectedLanguage == 'zh' ? '简体中文' : 'English',
+                  onTap: () => showLanguageDialog(),
                   isDark: isDark,
                 ),
               ],
@@ -184,7 +196,7 @@ class _SettingPageState extends State<SettingPage> {
             // Footer
             Center(
               child: Text(
-                '© 2024 吃了么',
+                AppConfig.trademark,
                 style: TextStyle(
                   color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
                   fontSize: 12,
@@ -364,27 +376,132 @@ class _SettingPageState extends State<SettingPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('清空缓存'),
-          content: const Text('确定要清空应用缓存吗？这将释放存储空间。'),
+          title: Text(t('clearCache')),
+          content: Text(t('confirmClearCache')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
+              child: Text(t('cancel')),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('缓存已清空')),
-                );
               },
-              child: const Text('确定'),
+              child: Text(t('confirm')),
             ),
           ],
         );
       },
     );
   }
+
+  void showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              title: Text(t('selectLanguage')),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Material(
+                      child: RadioGroup<String>(
+                        groupValue: _selectedLanguage,
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setDialogState(() {
+                            _selectedLanguage = value;
+                          });
+                          final message = value == 'zh' 
+                              ? '语言已切换为简体中文' 
+                              : 'Language switched to English';
+                          _changeLanguage(value, message);
+                        },
+                        child: Column(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                setDialogState(() {
+                                  _selectedLanguage = 'zh';
+                                });
+                                _changeLanguage('zh', '语言已切换为简体中文');
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: Row(
+                                  children: [
+                                    Radio<String>(
+                                      value: 'zh',
+                                      activeColor: AppTheme.primaryColor,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text('简体中文'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                setDialogState(() {
+                                  _selectedLanguage = 'en';
+                                });
+                                _changeLanguage('en', 'Language switched to English');
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: Row(
+                                  children: [
+                                    Radio<String>(
+                                      value: 'en',
+                                      activeColor: AppTheme.primaryColor,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text('English'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(t('cancel')),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _changeLanguage(String? value, String message) async {
+    if (value == null) return;
+    
+    setState(() {
+      _selectedLanguage = value;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selectedLanguage', value);
+    
+    appLanguageNotifier.value = value;
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
+  }
+
+
+
 
   void _showClearAllDataDialog() {
     showDialog(
@@ -398,7 +515,7 @@ class _SettingPageState extends State<SettingPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('取消'),
+              child: Text(t('cancel')),
             ),
             TextButton(
               onPressed: () {
@@ -408,7 +525,7 @@ class _SettingPageState extends State<SettingPage> {
                 );
               },
               child: Text(
-                '确定删除',
+                t('confirmDelete'),
                 style: TextStyle(color: Colors.red.shade700),
               ),
             ),

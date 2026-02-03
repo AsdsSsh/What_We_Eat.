@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:what_we_eat/i18n/translations.dart';
+import 'package:what_we_eat/pages/setting_page.dart';
 import 'recipe_detail_page.dart';
 import 'package:what_we_eat/database/food_database_helper.dart';
 import 'package:what_we_eat/models/food.dart';
@@ -18,12 +21,12 @@ class _SearchPageState extends State<SearchPage> {
   final ScrollController _scrollController = ScrollController();
   static const int _pageSize = 8;
   
-  // 移除 _allFoods，改为按需加载
   List<Food> _visibleFoods = [];
   int _currentOffset = 0;
   int _totalCount = 0;
   bool _isLoadingMore = false;
   bool _hasMore = true;
+  String _selectedLanguage = 'zh';
   
   // 新增：刷新锁和防抖
   bool _isRefreshing = false;
@@ -34,8 +37,23 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     _initLoad();
+    _initLanguageFromPrefs();
     _scrollController.addListener(_onScrollLoadMore);
   }
+
+  String t(String key) {
+    return Translations.translate(key, _selectedLanguage);
+  }
+
+  Future<void> _initLanguageFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('selectedLanguage') ?? 'zh';
+    setState(() {
+      _selectedLanguage = saved;
+    });
+    appLanguageNotifier.value = saved;
+  }
+
 
   // 初始化加载：获取总数并加载第一页
   Future<void> _initLoad() async {
@@ -125,126 +143,123 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 顶部搜索区域
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '搜索菜谱',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SearchDetailPage(
-                            initialQuery: '',
-                            initialHistory: _searchHistory,
+    return ValueListenableBuilder(
+      valueListenable: appLanguageNotifier,
+      builder: (context, lang, child) {
+        _selectedLanguage = lang;
+        return Scaffold(
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 顶部搜索区域
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SearchDetailPage(
+                                initialQuery: '',
+                                initialHistory: _searchHistory,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                            boxShadow: AppTheme.cardShadow,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search_rounded,
+                                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                t('InputKeywords'),
+                                style: TextStyle(
+                                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                        boxShadow: AppTheme.cardShadow,
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.search_rounded,
-                            color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            '搜索你想要的菜谱...',
-                            style: TextStyle(
-                              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            
-            // 热门菜谱标题
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '共 $_totalCount 道',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            // 中间主体：可拖动 + 下拉刷新 + 分页加载
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _refreshFoods,
-                color: AppTheme.primaryColor,
-                child: GridView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.82,
-                  ),
-                  itemCount: _visibleFoods.length + (_hasMore ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (_hasMore && index == _visibleFoods.length) {
-                      // 底部加载指示
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-                    final recipe = _visibleFoods[index];
-                    return _buildRecipeCard(context, recipe, isDark);
-                  },
                 ),
-              ),
+                
+                // 热门菜谱标题
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '共 $_totalCount 道',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // 中间主体：可拖动 + 下拉刷新 + 分页加载
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _refreshFoods,
+                    color: AppTheme.primaryColor,
+                    child: GridView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.82,
+                      ),
+                      itemCount: _visibleFoods.length + (_hasMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (_hasMore && index == _visibleFoods.length) {
+                          // 底部加载指示
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        final recipe = _visibleFoods[index];
+                        return _buildRecipeCard(context, recipe, isDark);
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }
     );
   }
 

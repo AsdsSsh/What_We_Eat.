@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/components/bottom_nav_bar.dart';
 import 'package:what_we_eat/config/app_config.dart';
+import 'package:what_we_eat/i18n/translations.dart';
 import 'package:what_we_eat/pages/do_dish_page.dart';
 import 'package:what_we_eat/pages/home_page.dart';
 import 'package:what_we_eat/pages/me_page.dart';
 import 'package:what_we_eat/pages/search_page.dart';
 import 'package:what_we_eat/pages/setting_page.dart';
+import 'package:what_we_eat/providers/auth_provider.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 
 
@@ -19,9 +23,10 @@ class MainPage extends StatefulWidget {
 }
 
 
-class _MainPageState extends State<MainPage> {
+class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
 
   int _selectedIndex = 0;
+  String _selectedLanguage = 'zh';
 
   late final List<Widget> _pages;
   final PageController _pageController = PageController();
@@ -29,15 +34,28 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
+    _initLanguageFromPrefs();
+    WidgetsBinding.instance.addObserver(this);
     _pages = [
       HomePage(onExplore: () => _onItemTapped(1)),
       const DoDishPage(),
       const SearchPage(),
     ];
   }
+  String t(String key) {
+    return Translations.translate(key, _selectedLanguage);
+  }
+
+  Future<void> _initLanguageFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('selectedLanguage') ?? 'zh';
+    setState(() {
+      _selectedLanguage = saved;
+    });
+    appLanguageNotifier.value = saved;
+  }
 
   void _onItemTapped(int index) {
-    // animate to page if controller attached, otherwise just update index
     if (_pageController.hasClients) {
       _pageController.animateToPage(
         index,
@@ -53,56 +71,72 @@ class _MainPageState extends State<MainPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // 当应用从后台恢复时刷新登录状态
+    if (state == AppLifecycleState.resumed) {
+      Provider.of<AuthProvider>(context, listen: false).checkLoginStatus();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return Scaffold(
-      drawer: _buildDrawer(context, isDark),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? AppTheme.surfaceDark 
-                    : AppTheme.surfaceLight,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: AppTheme.cardShadow,
-              ),
-              child: Icon(
-                Icons.menu_rounded,
-                color: isDark 
-                    ? AppTheme.textPrimaryDark 
-                    : AppTheme.textPrimaryLight,
-                size: 20,
+    return ValueListenableBuilder(
+      valueListenable: appLanguageNotifier,
+      builder: (context, lang, child) {
+        _selectedLanguage = lang;
+        return Scaffold(
+          drawer: _buildDrawer(context, isDark),
+          appBar: AppBar(
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            leading: Builder(
+              builder: (context) => IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isDark 
+                        ? AppTheme.surfaceDark 
+                        : AppTheme.surfaceLight,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Icon(
+                    Icons.menu_rounded,
+                    color: isDark 
+                        ? AppTheme.textPrimaryDark 
+                        : AppTheme.textPrimaryLight,
+                    size: 20,
+                  ),
+                ),
+                onPressed: () => Scaffold.of(context).openDrawer(),
               ),
             ),
-            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
-        ),
-      ),
-      extendBodyBehindAppBar: true,
-      bottomNavigationBar: BottomNavBar(
-        onTabChange: (index) => _onItemTapped(index),
-        selectedIndex: _selectedIndex,
-      ),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        children: _pages,
-      ),
+          extendBodyBehindAppBar: true,
+          bottomNavigationBar: BottomNavBar(
+            onTabChange: (index) => _onItemTapped(index),
+            selectedIndex: _selectedIndex,
+          ),
+          body: PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+            children: _pages,
+          ),
+        );
+      }
     );
   }
 
@@ -139,7 +173,7 @@ class _MainPageState extends State<MainPage> {
                 _buildDrawerItem(
                   context,
                   icon: Icons.home_rounded,
-                  title: '首页',
+                  title: t('home'),
                   onTap: () {
                     Navigator.pop(context);
                     _onItemTapped(0);
@@ -149,7 +183,7 @@ class _MainPageState extends State<MainPage> {
                 _buildDrawerItem(
                   context,
                   icon: Icons.settings_rounded,
-                  title: '设置',
+                  title: t('setting'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -161,7 +195,7 @@ class _MainPageState extends State<MainPage> {
                 _buildDrawerItem(
                   context,
                   icon: Icons.person_rounded,
-                  title: '我的',
+                  title: t('me'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -174,15 +208,6 @@ class _MainPageState extends State<MainPage> {
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Divider(),
-                ),
-                
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.help_outline_rounded,
-                  title: '帮助与反馈',
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
                 ),
               ],
             ),

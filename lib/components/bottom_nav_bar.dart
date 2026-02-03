@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:what_we_eat/i18n/translations.dart';
+import 'package:what_we_eat/pages/setting_page.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 
-class BottomNavBar extends StatelessWidget {
+class BottomNavBar extends StatefulWidget {
   final Function(int)? onTabChange;
   final int selectedIndex;
 
@@ -12,58 +15,89 @@ class BottomNavBar extends StatelessWidget {
   });
 
   @override
+  State<BottomNavBar> createState() => _BottomNavBarState();
+}
+
+class _BottomNavBarState extends State<BottomNavBar> {
+  String _selectedLanguage = 'zh';
+
+  String t(String key) {
+    return Translations.translate(key, _selectedLanguage);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initLanguageFromPrefs();
+  }
+
+  Future<void> _initLanguageFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('selectedLanguage') ?? 'zh';
+    setState(() {
+      _selectedLanguage = saved;
+    });
+    appLanguageNotifier.value = saved;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Expanded(
-                child: _buildNavItem(
-                  context,
-                  index: 0,
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home_rounded,
-                  label: '首页',
+    return ValueListenableBuilder(
+        valueListenable: appLanguageNotifier,
+        builder: (context, lang, child) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          _selectedLanguage = lang;
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Expanded(
+                      child: _buildNavItem(
+                        context,
+                        index: 0,
+                        icon: Icons.home_outlined,
+                        activeIcon: Icons.home_rounded,
+                        label: t('home'),
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildNavItem(
+                        context,
+                        index: 1,
+                        icon: Icons.restaurant_menu_outlined,
+                        activeIcon: Icons.restaurant_menu_rounded,
+                        label: t('cook'),
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildNavItem(
+                        context,
+                        index: 2,
+                        icon: Icons.search_outlined,
+                        activeIcon: Icons.search_rounded,
+                        label: t('search'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Expanded(
-                child: _buildNavItem(
-                  context,
-                  index: 1,
-                  icon: Icons.restaurant_menu_outlined,
-                  activeIcon: Icons.restaurant_menu_rounded,
-                  label: '做菜',
-                ),
-              ),
-              Expanded(
-                child: _buildNavItem(
-                  context,
-                  index: 2,
-                  icon: Icons.search_outlined,
-                  activeIcon: Icons.search_rounded,
-                  label: '搜索',
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+            ),
+          );
+        });
   }
 
   Widget _buildNavItem(
@@ -73,11 +107,11 @@ class BottomNavBar extends StatelessWidget {
     required IconData activeIcon,
     required String label,
   }) {
-    final isSelected = selectedIndex == index;
+    final isSelected = widget.selectedIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return GestureDetector(
-      onTap: () => onTabChange?.call(index),
+      onTap: () => widget.onTabChange?.call(index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -101,7 +135,9 @@ class BottomNavBar extends StatelessWidget {
               size: 24,
               color: isSelected
                   ? AppTheme.primaryColor
-                  : (isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight),
+                  : (isDark
+                      ? AppTheme.textSecondaryDark
+                      : AppTheme.textSecondaryLight),
             ),
             AnimatedSize(
               duration: const Duration(milliseconds: 200),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/config/app_config.dart';
+import 'package:what_we_eat/i18n/translations.dart';
 import 'package:what_we_eat/pages/edit_profile_page.dart';
 import 'package:what_we_eat/pages/login_page.dart';
 import 'package:what_we_eat/pages/my_favorite_page.dart';
@@ -17,73 +20,212 @@ class MePage extends StatefulWidget {
 }
 
 class _MePageState extends State<MePage> {
+  String _selectedLanguage = 'zh';
+
+  String t(String key) {
+    return Translations.translate(key, _selectedLanguage);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initLanguageFromPrefs();
+    // 每次进入页面时刷新登录状态
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AuthProvider>(context, listen: false).checkLoginStatus();
+    });
+  }
+
+  Future<void> _initLanguageFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('selectedLanguage') ?? 'zh';
+    setState(() {
+      _selectedLanguage = saved;
+    });
+    appLanguageNotifier.value = saved;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLoggedIn = AuthProvider().isLoggedIn;
+    final auth = context.watch<AuthProvider>();
+    final isLoggedIn = auth.isLoggedIn;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('我的'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 18,
-              color:
-                  isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+    return ValueListenableBuilder(
+      valueListenable: appLanguageNotifier,
+      builder: (context, lang, child) {
+        _selectedLanguage = lang;
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(t('me')),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 18,
+                  color:
+                      isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                ),
+              ),
+              onPressed: () => Navigator.pop(context),
             ),
           ),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // User Profile Card
-            Container(
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                boxShadow: AppTheme.elevatedShadow,
-              ),
-              child: Column(
-                children: [
-                  // 顶部模糊背景
-                  Container(
-                    height: 100,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.green.shade200,
-                          Colors.orange.shade200,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // User Profile Card
+                Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                    boxShadow: AppTheme.elevatedShadow,
+                  ),
+                  child: Column(
+                    children: [
+                      // 顶部模糊背景
+                      Container(
+                        height: 100,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.green.shade200,
+                              Colors.orange.shade200,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: isLoggedIn
+                            ? Align(
+                                alignment: Alignment.topRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      final result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const EditProfilePage(),
+                                        ),
+                                      );
+                                      if (result == true) {
+                                        setState(() {});
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.3),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
+                                        Icons.edit_rounded,
+                                        size: 18,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : null,
                       ),
-                    ),
-                    child: isLoggedIn
-                        ? Align(
-                            alignment: Alignment.topRight,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: GestureDetector(
+                      // 头像和用户信息
+                      Transform.translate(
+                        offset: const Offset(0, -40),
+                        child: Column(
+                          children: [
+                            // 头像
+                            GestureDetector(
+                              onTap: isLoggedIn
+                                  ? () async {
+                                      final result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const EditProfilePage(),
+                                        ),
+                                      );
+                                      if (result == true) {
+                                        setState(() {});
+                                      }
+                                    }
+                                  : null,
+                              child: Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppTheme.surfaceDark
+                                      : AppTheme.surfaceLight,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: AppTheme.cardShadow,
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Icon(
+                                    Icons.person_rounded,
+                                    size: 50,
+                                    color: isDark
+                                        ? AppTheme.textSecondaryDark
+                                        : AppTheme.textSecondaryLight,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // 用户名
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  isLoggedIn ? (auth.userName ?? t('User')) : t('Unlogged'),
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? AppTheme.textPrimaryDark
+                                        : AppTheme.textPrimaryLight,
+                                  ),
+                                ),
+                                if (isLoggedIn) ...[
+                                  const SizedBox(width: 6),
+                                  Icon(
+                                    Icons.verified_rounded,
+                                    size: 18,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            // 用户ID 或 登录按钮
+                            if (isLoggedIn)
+                              Text(
+                                '@${auth.email ?? 'unknown'}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark
+                                      ? AppTheme.textSecondaryDark
+                                      : AppTheme.textSecondaryLight,
+                                ),
+                              )
+                            else
+                              GestureDetector(
                                 onTap: () async {
                                   final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const EditProfilePage(),
+                                      builder: (context) => const LoginPage(),
                                     ),
                                   );
                                   if (result == true) {
@@ -91,236 +233,129 @@ class _MePageState extends State<MePage> {
                                   }
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.all(8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                    borderRadius: BorderRadius.circular(10),
+                                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                  child: const Icon(
-                                    Icons.edit_rounded,
-                                    size: 18,
-                                    color: Colors.white,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.login_rounded,
+                                        size: 16,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        t('login/register'),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: AppTheme.primaryColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
-                            ),
-                          )
-                        : null,
-                  ),
-                  // 头像和用户信息
-                  Transform.translate(
-                    offset: const Offset(0, -40),
-                    child: Column(
-                      children: [
-                        // 头像
-                        GestureDetector(
-                          onTap: isLoggedIn
-                              ? () async {
-                                  final result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const EditProfilePage(),
-                                    ),
-                                  );
-                                  if (result == true) {
-                                    setState(() {});
-                                  }
-                                }
-                              : null,
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? AppTheme.surfaceDark
-                                  : AppTheme.surfaceLight,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: AppTheme.cardShadow,
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Icon(
-                                Icons.person_rounded,
-                                size: 50,
-                                color: isDark
-                                    ? AppTheme.textSecondaryDark
-                                    : AppTheme.textSecondaryLight,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // 用户名
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              isLoggedIn ? (AuthProvider().userName ?? '用户') : '未登录',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? AppTheme.textPrimaryDark
-                                    : AppTheme.textPrimaryLight,
-                              ),
-                            ),
-                            if (isLoggedIn) ...[
-                              const SizedBox(width: 6),
-                              Icon(
-                                Icons.verified_rounded,
-                                size: 18,
-                                color: Colors.grey.shade400,
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        // 用户ID 或 登录按钮
-                        if (isLoggedIn)
-                          Text(
-                            '@${AuthProvider().email ?? 'unknown'}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isDark
-                                  ? AppTheme.textSecondaryDark
-                                  : AppTheme.textSecondaryLight,
-                            ),
-                          )
-                        else
-                          GestureDetector(
-                            onTap: () async {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginPage(),
-                                ),
-                              );
-                              if (result == true) {
-                                setState(() {});
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                            const SizedBox(height: 16),
+                            // 统计信息（仅登录后显示）
+                            if (isLoggedIn)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(
-                                    Icons.login_rounded,
-                                    size: 16,
-                                    color: AppTheme.primaryColor,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '登录 / 注册',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: AppTheme.primaryColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  _buildStatItem('0', t('MyFavoritesCnt'), isDark, onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const MyfavoritePage()),
+                                    );
+                                  }),
                                 ],
                               ),
-                            ),
-                          ),
-                        const SizedBox(height: 16),
-                        // 统计信息（仅登录后显示）
-                        if (isLoggedIn)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildStatItem('0', '收藏', isDark, onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const MyfavoritePage()),
-                                );
-                              }),
-                            ],
-                          ),
-                      ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+        
+                // Menu Section
+                _buildSectionTitle(t('FunctionMenu'), isDark),
+                const SizedBox(height: 12),
+        
+                _buildMenuCard(
+                  context,
+                  isDark,
+                  children: [
+                    _buildMenuItem(
+                      context,
+                      icon: Icons.settings_rounded,
+                      iconColor: AppTheme.primaryColor,
+                      title: t('setting'),
+                      subtitle: t('AppPreferences'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SettingPage()),
+                      ),
+                      isDark: isDark,
+                    ),
+                    _buildDivider(isDark),
+                    _buildMenuItem(
+                      context,
+                      icon: Icons.info_rounded,
+                      iconColor: AppTheme.accentGreen,
+                      title: t('AboutUs'),
+                      subtitle: t('ViewAppinformation'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const AboutUsPage()),
+                      ),
+                      isDark: isDark,
+                    ),
+                    _buildDivider(isDark),
+                    _buildMenuItem(
+                      context,
+                      icon: Icons.feedback_rounded,
+                      iconColor: AppTheme.accentOrange,
+                      title: t('Feedback'),
+                      subtitle: t('SendFeedback'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const FeedbackPage()),
+                      ),
+                      isDark: isDark,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+        
+                // Footer
+                Center(
+                  child: Text(
+                    AppConfig.trademark,
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.textSecondaryDark
+                          : AppTheme.textSecondaryLight,
+                      fontSize: 12,
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Menu Section
-            _buildSectionTitle('功能菜单', isDark),
-            const SizedBox(height: 12),
-
-            _buildMenuCard(
-              context,
-              isDark,
-              children: [
-                _buildMenuItem(
-                  context,
-                  icon: Icons.settings_rounded,
-                  iconColor: AppTheme.primaryColor,
-                  title: '设置',
-                  subtitle: '应用偏好设置',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const SettingPage()),
-                  ),
-                  isDark: isDark,
-                ),
-                _buildDivider(isDark),
-                _buildMenuItem(
-                  context,
-                  icon: Icons.info_rounded,
-                  iconColor: AppTheme.accentGreen,
-                  title: '关于我们',
-                  subtitle: '了解应用信息',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const AboutUsPage()),
-                  ),
-                  isDark: isDark,
-                ),
-                _buildDivider(isDark),
-                _buildMenuItem(
-                  context,
-                  icon: Icons.feedback_rounded,
-                  iconColor: AppTheme.accentOrange,
-                  title: '意见反馈',
-                  subtitle: '帮助我们改进应用',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const FeedbackPage()),
-                  ),
-                  isDark: isDark,
                 ),
               ],
             ),
-            const SizedBox(height: 32),
-
-            // Footer
-            Center(
-              child: Text(
-                AppConfig.trademark,
-                style: TextStyle(
-                  color: isDark
-                      ? AppTheme.textSecondaryDark
-                      : AppTheme.textSecondaryLight,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }
     );
   }
 
