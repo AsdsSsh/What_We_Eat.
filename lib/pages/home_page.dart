@@ -1,8 +1,9 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/i18n/translations.dart';
-import 'package:what_we_eat/pages/my_favorite_page.dart';
-import 'package:what_we_eat/pages/recommend_page.dart';
+import 'package:what_we_eat/pages/ai_assistant_page.dart';
+import 'package:what_we_eat/pages/random_recipe_page.dart';
 import 'package:what_we_eat/pages/setting_page.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 
@@ -17,13 +18,64 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _selectedLanguage = 'zh';
+  late String _currentReason;
+  late String _recommendedDish;
 
-   @override
+  final List<Map<String, String>> _recommendations = [
+    {
+      'reason_zh': '现在是早晨，来一份营养均衡的早餐吧',
+      'reason_en': 'It\'s morning, time for a balanced breakfast',
+      'dish_zh': '番茄鸡蛋面',
+      'dish_en': 'Tomato Egg Noodles',
+    },
+    {
+      'reason_zh': '您今天已经吃了较多肉类，推荐一道清淡的蔬菜',
+      'reason_en': 'You\'ve had a lot of meat today, try some vegetables',
+      'dish_zh': '清炒时蔬',
+      'dish_en': 'Stir-fried Vegetables',
+    },
+    {
+      'reason_zh': '现在是晚餐时间，来点容易消化的食物',
+      'reason_en': 'It\'s dinner time, try something easy to digest',
+      'dish_zh': '小米粥配凉拌黄瓜',
+      'dish_en': 'Millet Porridge with Cucumber Salad',
+    },
+    {
+      'reason_zh': '根据营养学建议，您需要补充更多蛋白质',
+      'reason_en': 'Based on nutrition advice, you need more protein',
+      'dish_zh': '红烧排骨',
+      'dish_en': 'Braised Pork Ribs',
+    },
+    {
+      'reason_zh': '天气有点冷，来碗热腾腾的汤暖暖身子',
+      'reason_en': 'It\'s cold outside, warm up with a hot soup',
+      'dish_zh': '酸辣汤',
+      'dish_en': 'Hot and Sour Soup',
+    },
+    {
+      'reason_zh': '周末了，犒劳一下自己吧',
+      'reason_en': 'It\'s weekend, treat yourself',
+      'dish_zh': '糖醋里脊',
+      'dish_en': 'Sweet and Sour Pork',
+    },
+  ];
+
+  @override
   void initState() {
     super.initState();
     _initLanguageFromPrefs();
+    _refreshRecommendation();
   }
 
+  void _refreshRecommendation() {
+    final random = Random();
+    final index = random.nextInt(_recommendations.length);
+    final rec = _recommendations[index];
+    setState(() {
+      _currentReason = _selectedLanguage == 'zh' ? rec['reason_zh']! : rec['reason_en']!;
+      _recommendedDish = _selectedLanguage == 'zh' ? rec['dish_zh']! : rec['dish_en']!;
+    });
+  }
 
   Future<void> _initLanguageFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
@@ -32,13 +84,8 @@ class _HomePageState extends State<HomePage> {
       _selectedLanguage = saved;
     });
     appLanguageNotifier.value = saved;
+    _refreshRecommendation();
   }
-  // TODO 我的收藏完成
-  // TODO 个性化推荐完成
-  // TODO 用户添加自己的食谱
-  // TODO 食谱反馈
-  // TODO MCP Server 集成
-  // TODO 缓存机制
 
   String t(String key) {
     return Translations.translate(key, _selectedLanguage);
@@ -46,7 +93,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // ValueListenableBuilder监听语言和主题变化
     return ValueListenableBuilder(
       valueListenable: appLanguageNotifier,
       builder: (context, lang, child) {
@@ -59,234 +105,315 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Hero Section
-                  Center(
-                    child: Column(
-                      children: [
-                        // Logo with gradient background
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.primaryGradient,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: AppTheme.elevatedShadow,
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.primaryGradient,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            color: Colors.white,
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t('appName'),
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                              ),
                             ),
-                          ),
+                            Text(
+                              _selectedLanguage == 'zh' ? '今天想吃点什么？' : 'What do you want to eat?',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 20),
-                        Text(
-                          t('appName'),
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 32),
-        
-                  // Quick Actions Section
-                  Text(
-                    t("QuickStart"),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
-                    ),
-                  ),
+
+                  // 1. 今日推荐 - 大卡片
+                  _buildRecommendationCard(context, isDark),
                   const SizedBox(height: 16),
-        
-                  // Feature Cards
-                  _buildFeatureCard(
-                    context,
-                    icon: Icons.lightbulb_rounded,
-                    title: t('PersonalizedRecommendations'),
-                    subtitle: t('PersonalizedRecommendationsSubtitle'),
-                    gradient: AppTheme.orangeGradient,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const RecommendPage()),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  _buildFeatureCard(
-                    context,
-                    icon: Icons.restaurant_menu_rounded,
-                    title: t('IngredientCooking'),
-                    subtitle: t('SelectIngredientsSubtitle'),
-                    gradient: AppTheme.primaryGradient,
-                    onTap: () {
-                      if (widget.onExplore != null) {
-                        widget.onExplore!();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  _buildFeatureCard(
-                    context,
-                    icon: Icons.favorite_rounded,
-                    title: t('MyFavorites'),
-                    subtitle: t('MyFavoritesSubtitle'),
-                    gradient: AppTheme.greenGradient,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const MyfavoritePage()),
-                      );
-                    },
-                  ),
-        
-                  const SizedBox(height: 32),
-        
-                  // Stats Section
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                      boxShadow: AppTheme.cardShadow,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem(context, '30+', t('Recipe')),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
-                        ),
-                        _buildStatItem(context, '∞', t('Possibilities')),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
-                        ),
-                        _buildStatItem(context, '50+', t('Ingredients')),
-                      ],
-                    ),
+
+                  // 2. 两个并排的小卡片
+                  Row(
+                    children: [
+                      Expanded(child: _buildRandomRecipeCard(context, isDark)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildAIAssistantCard(context, isDark)),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
         );
-      }
+      },
     );
   }
 
-  Widget _buildFeatureCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required LinearGradient gradient,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
+  Widget _buildRecommendationCard(BuildContext context, bool isDark) {
+    final cardColor = isDark ? AppTheme.surfaceDark : Colors.white;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
         borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-            boxShadow: [
-              BoxShadow(
-                color: gradient.colors.first.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
-          child: Row(
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
               Container(
-                width: 56,
-                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(16),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    Icon(Icons.auto_awesome, color: AppTheme.primaryColor, size: 16),
+                    const SizedBox(width: 4),
                     Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
+                      _selectedLanguage == 'zh' ? '今日推荐' : 'For You',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 14,
+                        color: AppTheme.primaryColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: Colors.white.withValues(alpha: 0.8),
-                size: 20,
+              const Spacer(),
+              GestureDetector(
+                onTap: _refreshRecommendation,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.refresh_rounded,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    size: 20,
+                  ),
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          Text(
+            _recommendedDish,
+            style: TextStyle(
+              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.lightbulb_outline_rounded,
+                color: isDark ? Colors.amber.shade300 : Colors.amber.shade700,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _currentReason,
+                  style: TextStyle(
+                    color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                // TODO: 跳转到菜谱详情
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                _selectedLanguage == 'zh' ? '查看做法' : 'View Recipe',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRandomRecipeCard(BuildContext context, bool isDark) {
+    final cardColor = isDark ? AppTheme.surfaceDark : Colors.white;
+    
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const RandomRecipePage()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                Icons.casino_rounded,
+                color: Colors.orange.shade600,
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _selectedLanguage == 'zh' ? '随机\n菜谱' : 'Random\nRecipe',
+              style: TextStyle(
+                color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _selectedLanguage == 'zh' ? '让命运决定' : 'Let fate decide',
+              style: TextStyle(
+                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String value, String label) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildAIAssistantCard(BuildContext context, bool isDark) {
+    final cardColor = isDark ? AppTheme.surfaceDark : Colors.white;
     
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.primaryColor,
-          ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AIAssistantPage()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.teal.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                Icons.smart_toy_rounded,
+                color: Colors.teal.shade600,
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _selectedLanguage == 'zh' ? 'AI\n助手' : 'AI\nAssistant',
+              style: TextStyle(
+                color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _selectedLanguage == 'zh' ? '智能推荐' : 'Smart advice',
+              style: TextStyle(
+                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

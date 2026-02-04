@@ -144,7 +144,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       bottom: 0,
                       child: GestureDetector(
                         onTap: () {
-                          // TODO: 实现头像选择
+                          // TODO: 实现头像选择 低优先级
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('头像功能开发中')),
                           );
