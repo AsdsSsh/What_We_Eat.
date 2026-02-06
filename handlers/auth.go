@@ -13,11 +13,13 @@ import (
 // GET /api/login_or_register?email=xxx
 func GetVerificationCode(c *gin.Context) {
 	var req dto.GetVerificationCodeRequest
+	print(&req)
 	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "邮箱格式不正确"})
 		return
 	}
 
+	print(":-)")
 	err := services.AuthRepo.GenerateVerificationCode(req.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "生成验证码失败"})

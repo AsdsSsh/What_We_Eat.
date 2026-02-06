@@ -24,6 +24,7 @@ func SetupRouter() *gin.Engine {
 		{
 			recommendGroup.GET("/:userId", handlers.GetRecommendations)
 			recommendGroup.POST("/analyze", handlers.AnalyzeDailyIntake)
+			recommendGroup.POST("/call_ai", handlers.CallAI)
 		}
 
 		// 数据更新

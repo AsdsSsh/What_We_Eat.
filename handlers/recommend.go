@@ -20,6 +20,24 @@ type DailyIntakeRequest struct {
 	Foods  []string `json:"foods"`
 }
 
+type CallAIRequest struct {
+	Message string `json:"message"`
+}
+
+type CallAIResponse struct {
+	Response string `json:"response"`
+}
+
+func CallAI(c *gin.Context) {
+	var req CallAIRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	response := services.CallAI(req.Message)
+	c.JSON(http.StatusOK, CallAIResponse{Response: response})
+}
+
 func GetRecommendations(c *gin.Context) {
 	userIdStr := c.Param("userId")
 	userId, err := strconv.ParseUint(userIdStr, 10, 32)
