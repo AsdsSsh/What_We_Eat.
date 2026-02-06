@@ -24,6 +24,8 @@ class RecipeDetailPage extends StatefulWidget {
 class _RecipeDetailPageState extends State<RecipeDetailPage> {
   String _selectedLanguage = 'zh';
   bool _isFavorited = false;
+  bool _oriFavorited = false;
+  bool _hasSavedOnExit = false;
 
   @override
   void initState() {
@@ -50,7 +52,10 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   Future<void> _initFavoriteState() async {
     final liked = await isFoodFavorited(widget.recipeInfo.id.toString());
     if (!mounted) return;
-    setState(() => _isFavorited = liked);
+    setState(() {
+      _isFavorited = liked;
+      _oriFavorited = liked;
+    });
   }
 
   String t(String key) {
@@ -66,11 +71,12 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
     appLanguageNotifier.value = saved;
   }
 
-  // 将recipe加入SQLite本地数据库
-  // 异步调用
-  Future<void> loveThis() async {
+
+  // 检查并更改收藏状态
+  Future<void> changeLove(bool nowFavorited) async {
+    if (nowFavorited == _oriFavorited) return;
     try {
-      await FoodDatabaseHelper.instance.addFavoriteFood(widget.recipeInfo);
+      await FoodDatabaseHelper.instance.changeLove(widget.recipeInfo , nowFavorited);
       if (mounted) setState(() => _isFavorited = true);
     } catch (e) {
       print('Error adding favorite food: $e');
@@ -80,6 +86,17 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   Future<bool> isFoodFavorited(String id) async {
     return await FoodDatabaseHelper.instance.isFoodFavorited(id);
   }
+
+
+  @override
+  void dispose() {
+    if (!_hasSavedOnExit) {
+      changeLove(_isFavorited);
+      _hasSavedOnExit = true;
+    }
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -235,13 +252,10 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                 );
                 return;
               }
-              if (_isFavorited) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(t('favoriteRemoveHint'))),
-                );
-              } else {
-                loveThis();
-              }
+              // 改变状态以改变图标
+              setState(() {
+                _isFavorited = !_isFavorited;
+              });
             },
             label: Text(t('favoriteAdd')),
             icon: Icon(_isFavorited ? Icons.favorite : Icons.favorite_border),

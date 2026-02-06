@@ -104,8 +104,8 @@ class _RandomRecipePageState extends State<RandomRecipePage> {
                       Slider(
                         value: _recipeCount.toDouble(),
                         min: 1,
-                        max: 10,
-                        divisions: 9,
+                        max: 5,
+                        divisions: 4,
                         activeColor: AppTheme.primaryColor,
                         onChanged: (value) {
                           setState(() {

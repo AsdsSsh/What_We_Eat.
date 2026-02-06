@@ -1,6 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:what_we_eat/config/api_config.dart';
 import 'package:what_we_eat/pages/setting_page.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:http/http.dart' as http;
 
 class AIAssistantPage extends StatefulWidget {
   const AIAssistantPage({super.key});
@@ -16,6 +20,8 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
 
   String get _lang => appLanguageNotifier.value;
 
+  static const String _apiUrl = '${ApiConfig.baseUrl}/api/recommend/call_ai';
+
   @override
   void initState() {
     super.initState();
@@ -28,9 +34,15 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
     });
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _inputController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty) {
+      // 提示用户输入内容
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_lang == 'zh' ? '请输入内容！' : 'Please enter a message!')),
+      );
+      return;
+    }
 
     setState(() {
       _messages.add({'role': 'user', 'content': text});
@@ -38,33 +50,55 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
     });
     _inputController.clear();
 
-    // 模拟AI回复
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      final reply = await _fetchAssistantReply(text);
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _messages.add({'role': 'assistant', 'content': reply});
+      });
+    } catch (_) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _messages.add({
           'role': 'assistant',
-          'content': _generateMockResponse(text),
+          'content': _lang == 'zh' ? '请求失败，请稍后重试。' : 'Request failed, please try again later.',
         });
       });
-    });
+    }
   }
 
-  String _generateMockResponse(String input) {
-    // 模拟AI回复
-    if (input.contains('减肥') || input.contains('diet') || input.contains('lose weight')) {
-      return _lang == 'zh'
-          ? '根据您的减肥需求，我推荐以下低卡菜谱：\n\n1. **清蒸鱼** - 高蛋白低脂肪\n2. **凉拌黄瓜** - 清爽解腻\n3. **西兰花炒虾仁** - 营养均衡\n\n建议每餐控制在400-500卡路里，多喝水，适量运动。'
-          : 'Based on your diet needs, I recommend:\n\n1. **Steamed Fish** - High protein, low fat\n2. **Cucumber Salad** - Refreshing\n3. **Broccoli with Shrimp** - Balanced nutrition\n\nKeep each meal around 400-500 calories, drink more water, and exercise regularly.';
-    } else if (input.contains('营养') || input.contains('nutrition') || input.contains('健康')) {
-      return _lang == 'zh'
-          ? '健康饮食建议：\n\n• 每天摄入足够的蔬菜水果\n• 蛋白质来源多样化（肉、蛋、豆类）\n• 减少油炸和高糖食物\n• 保持规律的用餐时间\n\n需要我为您定制一周的营养餐单吗？'
-          : 'Healthy eating tips:\n\n• Eat enough vegetables and fruits daily\n• Diversify protein sources (meat, eggs, legumes)\n• Reduce fried and high-sugar foods\n• Maintain regular meal times\n\nWould you like me to create a weekly meal plan for you?';
-    } else {
-      return _lang == 'zh'
-          ? '我理解您的需求。根据您的描述，我建议您可以尝试一些家常菜，比如：\n\n• 番茄炒蛋 - 简单美味\n• 蒜蓉西兰花 - 健康营养\n• 红烧豆腐 - 经济实惠\n\n您还有其他问题吗？'
-          : 'I understand your needs. Based on your description, I suggest trying some home-cooked dishes:\n\n• Tomato Scrambled Eggs - Simple and delicious\n• Garlic Broccoli - Healthy and nutritious\n• Braised Tofu - Economical\n\nDo you have any other questions?';
+  Future<String> _fetchAssistantReply(String input) async {
+    final resp = await http.post(
+      Uri.parse(_apiUrl),
+      headers: const {'Content-Type': 'application/json' , 'Accept': 'application/json'},
+      body: jsonEncode({'Message': input}),
+    );
+
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw Exception('Bad status: ${resp.statusCode}');
     }
+
+    // 兼容 JSON 或纯文本返回
+    final body = resp.body.trim();
+    if (body.isEmpty) {
+      return _lang == 'zh' ? '没有收到有效回复。' : 'No valid response.';
+    }
+
+    try {
+      final data = jsonDecode(body);
+      if (data is Map && data['response'] is String) {
+        return data['response'] as String;
+      }
+      if (data is Map && data['content'] is String) {
+        return data['content'] as String;
+      }
+      if (data is String) return data;
+    } catch (_) {
+      // 非 JSON，按纯文本处理
+    }
+    return body;
   }
 
   @override
@@ -171,14 +205,14 @@ class _AIAssistantPageState extends State<AIAssistantPage> {
             bottomRight: Radius.circular(isUser ? 4 : 16),
           ),
         ),
-        child: Text(
+        child: isUser ? Text(
           content,
           style: TextStyle(
             color: isUser ? Colors.white : (isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight),
             fontSize: 15,
             height: 1.4,
           ),
-        ),
+        ) : MarkdownBody(data: content)
       ),
     );
   }

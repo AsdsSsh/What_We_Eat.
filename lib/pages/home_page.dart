@@ -6,6 +6,7 @@ import 'package:what_we_eat/pages/ai_assistant_page.dart';
 import 'package:what_we_eat/pages/random_recipe_page.dart';
 import 'package:what_we_eat/pages/setting_page.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
+import 'package:geolocator/geolocator.dart';
 
 class HomePage extends StatefulWidget {
   final VoidCallback? onExplore;
@@ -65,6 +66,56 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _initLanguageFromPrefs();
     _refreshRecommendation();
+    _askLocationOnFirstLaunch();
+  }
+
+  Future<void> _askLocationOnFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    final firstLaunch = prefs.getBool('firstLaunch') ?? true;
+    if (!firstLaunch) return;
+
+    await prefs.setBool('firstLaunch', false);
+    await _determinePosition();
+  }
+
+
+  // 请求位置权限并获取当前位置
+  Future<bool> _requestLocationPermission() async {
+    // GPS 服务是否开启
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      final res = await Geolocator.openLocationSettings();
+      if (!res) return false;
+    }
+
+    // 申请权限
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // 获取当前位置并保存到 SharedPreferences
+  Future<void> _fetchCurrentLocation() async {
+    final position = await Geolocator.getCurrentPosition();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('longitude', position.longitude);
+    await prefs.setDouble('latitude', position.latitude);
+  }
+
+  Future<void> _determinePosition() async {
+    final granted = await _requestLocationPermission();
+    if (!granted) {
+      // 如需引导用户手动开启可在这里处理
+      return;
+    }
+    await _fetchCurrentLocation();
   }
 
   void _refreshRecommendation() {
@@ -72,8 +123,10 @@ class _HomePageState extends State<HomePage> {
     final index = random.nextInt(_recommendations.length);
     final rec = _recommendations[index];
     setState(() {
-      _currentReason = _selectedLanguage == 'zh' ? rec['reason_zh']! : rec['reason_en']!;
-      _recommendedDish = _selectedLanguage == 'zh' ? rec['dish_zh']! : rec['dish_en']!;
+      _currentReason =
+          _selectedLanguage == 'zh' ? rec['reason_zh']! : rec['reason_en']!;
+      _recommendedDish =
+          _selectedLanguage == 'zh' ? rec['dish_zh']! : rec['dish_en']!;
     });
   }
 
@@ -133,14 +186,20 @@ class _HomePageState extends State<HomePage> {
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                                color: isDark
+                                    ? AppTheme.textPrimaryDark
+                                    : AppTheme.textPrimaryLight,
                               ),
                             ),
                             Text(
-                              _selectedLanguage == 'zh' ? '今天想吃点什么？' : 'What do you want to eat?',
+                              _selectedLanguage == 'zh'
+                                  ? '今天想吃点什么？'
+                                  : 'What do you want to eat?',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                                color: isDark
+                                    ? AppTheme.textSecondaryDark
+                                    : AppTheme.textSecondaryLight,
                               ),
                             ),
                           ],
@@ -173,7 +232,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildRecommendationCard(BuildContext context, bool isDark) {
     final cardColor = isDark ? AppTheme.surfaceDark : Colors.white;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -194,7 +253,8 @@ class _HomePageState extends State<HomePage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -202,7 +262,8 @@ class _HomePageState extends State<HomePage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.auto_awesome, color: AppTheme.primaryColor, size: 16),
+                    Icon(Icons.auto_awesome,
+                        color: AppTheme.primaryColor, size: 16),
                     const SizedBox(width: 4),
                     Text(
                       _selectedLanguage == 'zh' ? '今日推荐' : 'For You',
@@ -237,7 +298,8 @@ class _HomePageState extends State<HomePage> {
           Text(
             _recommendedDish,
             style: TextStyle(
-              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+              color:
+                  isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
               fontSize: 28,
               fontWeight: FontWeight.bold,
               height: 1.2,
@@ -256,7 +318,9 @@ class _HomePageState extends State<HomePage> {
                 child: Text(
                   _currentReason,
                   style: TextStyle(
-                    color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                    color: isDark
+                        ? AppTheme.textSecondaryDark
+                        : AppTheme.textSecondaryLight,
                     fontSize: 14,
                     height: 1.4,
                   ),
@@ -282,7 +346,8 @@ class _HomePageState extends State<HomePage> {
               ),
               child: Text(
                 _selectedLanguage == 'zh' ? '查看做法' : 'View Recipe',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -293,7 +358,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildRandomRecipeCard(BuildContext context, bool isDark) {
     final cardColor = isDark ? AppTheme.surfaceDark : Colors.white;
-    
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -334,7 +399,9 @@ class _HomePageState extends State<HomePage> {
             Text(
               _selectedLanguage == 'zh' ? '随机\n菜谱' : 'Random\nRecipe',
               style: TextStyle(
-                color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                color: isDark
+                    ? AppTheme.textPrimaryDark
+                    : AppTheme.textPrimaryLight,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 height: 1.3,
@@ -344,7 +411,9 @@ class _HomePageState extends State<HomePage> {
             Text(
               _selectedLanguage == 'zh' ? '让命运决定' : 'Let fate decide',
               style: TextStyle(
-                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                color: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondaryLight,
                 fontSize: 13,
               ),
             ),
@@ -356,7 +425,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildAIAssistantCard(BuildContext context, bool isDark) {
     final cardColor = isDark ? AppTheme.surfaceDark : Colors.white;
-    
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -397,7 +466,9 @@ class _HomePageState extends State<HomePage> {
             Text(
               _selectedLanguage == 'zh' ? 'AI\n助手' : 'AI\nAssistant',
               style: TextStyle(
-                color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                color: isDark
+                    ? AppTheme.textPrimaryDark
+                    : AppTheme.textPrimaryLight,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 height: 1.3,
@@ -407,7 +478,9 @@ class _HomePageState extends State<HomePage> {
             Text(
               _selectedLanguage == 'zh' ? '智能推荐' : 'Smart advice',
               style: TextStyle(
-                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                color: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondaryLight,
                 fontSize: 13,
               ),
             ),

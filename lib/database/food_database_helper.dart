@@ -214,6 +214,15 @@ class FoodDatabaseHelper {
   }
 
 
+  Future<void> changeLove(Food food , bool targetChangeState) async {
+    if (targetChangeState) {
+      addFavoriteFood(food);
+    } else {
+      removeFavoriteFood(food.id);
+    }
+  }
+
+
   
 
   /// 收藏菜谱相关操作 结束
