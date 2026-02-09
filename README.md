@@ -1,8 +1,8 @@
-# 🥬🍅 吃了么(What We Eat) — 用手边食材，解锁美味菜谱
+# 🍅 吃了么(What We Eat)
 
-What We Eat 是一款食材驱动的智能食谱推荐 App。勾选已有食材，App 智能匹配所有可做菜谱。
+What We Eat 是一款食材驱动的智能食谱推荐 App。
 
-## 📱 功能
+## 📱 介绍
 
 - **智能食材匹配**  
   勾选食材库中的食材，系统实时筛选可用菜谱。
@@ -14,14 +14,26 @@ What We Eat 是一款食材驱动的智能食谱推荐 App。勾选已有食材�
   基于位置，搜索附近餐厅和食堂。
 
 - **跨平台**  
-  Flutter 开发，iOS 与 Android 流畅运行。
+  使用 Flutter 开发，能够将应用便捷地覆盖到多个不同平台
+
+- **AI智能助手**
+  使用Function Calling , AI根据用户问题智能提供推荐与建议
+
+- **离线使用**
+  基本功能可以离线使用。
 
 ## 🛠 技术栈
 
 - 前端：Flutter(Dart) + Provider
 - 后端：Gin(Go)
 - 数据库：PostgreSQL + SQLite
-- MCP Server：[HowToCook-mcp](https://github.com/worryzyy/HowToCook-mcp.git)
+
+## 外部API调用
+
+| API | 描述 |
+| :--: | :--: |
+| DeepSeek API | 用于实现AI助手功能 |
+| Openweather API | 为Function Calling 提供获取天气数据工具 |
 
 ## 🚀 启动
 
@@ -32,4 +44,4 @@ flutter build apk --dart-define=API_URL=https://yourhost.com
 
 ## 🙏 致谢
 
-灵感源自 [cook](https://github.com/YunYouJun/cook)
+**智能食材匹配**灵感源自 [cook](https://github.com/YunYouJun/cook)
