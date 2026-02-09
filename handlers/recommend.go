@@ -21,7 +21,10 @@ type DailyIntakeRequest struct {
 }
 
 type CallAIRequest struct {
-	Message string `json:"message"`
+	Message   string  `json:"message"`
+	Lontitude float64 `json:"longitude"` // 经度
+	Latitude  float64 `json:"latitude"`  // 纬度
+	UserId    string  `json:"userId"`    // 用户ID ， 用于个性化推荐
 }
 
 type CallAIResponse struct {
@@ -34,7 +37,7 @@ func CallAI(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	response := services.CallAI(req.Message)
+	response := services.CallAI(req.Message, req.Lontitude, req.Latitude, req.UserId)
 	c.JSON(http.StatusOK, CallAIResponse{Response: response})
 }
 

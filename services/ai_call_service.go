@@ -120,10 +120,10 @@ type openWeatherResponse struct {
 		Sunrise int64  `json:"sunrise"`
 		Sunset  int64  `json:"sunset"`
 	} `json:"sys"`
-	Timezone int    `json:"timezone"`
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Cod      int    `json:"cod"`
+	Timezone int         `json:"timezone"`
+	ID       int         `json:"id"`
+	Name     string      `json:"name"`
+	Cod      json.Number `json:"cod"`
 }
 
 var authConfig config.Config = config.LoadConfig()
@@ -183,7 +183,7 @@ func sendMessage(message []map[string]any, client *http.Client) (response deepSe
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("read body error:" + err.Error())
 		return response, err
 	}
 	var parsed deepSeekResponse
@@ -198,54 +198,103 @@ func sendMessage(message []map[string]any, client *http.Client) (response deepSe
 	return parsed.Choices[0].Message, nil
 }
 
-func CallAI(message string) (response string) {
+func CallAI(message string, lon float64, lat float64, userId string) (response string) {
 	messageMap := []map[string]any{
-		{"content": "You are now an expert in food, providing users with advice about food.", "role": "system"},
+		{"content": "You are now an expert in food, providing users with advice about food. ", "role": "system"},
+		{"content": "The user is currently at longitude " + fmt.Sprintf("%f", lon) + " and latitude " + fmt.Sprintf("%f", lat) + "." + "When latitude and longitude are not available or Empty string, inform the user:Location information (latitude/longitude) is required to provide weather-based recommendations. Please enable location permissions or manually provide your location.", "role": "system"},
+		{"content": "The user's ID is " + userId + "." + "If the userId is not empty, fetch the user's historical record comprehensive analysis. If userId is null or Empty string , tell user because of unlogin you can not access his/her historical record, but remeber do not mention userId or Id", "role": "system"},
 		{"content": message, "role": "user"},
 	}
+	// 最大循环次数，防止死循环调用工具
+	maxLoops := 6
+	// 参数校验失败重试次数上限
+	invalidArgCount := 0
+	const maxInvalidArgRetries = 2
 	client := NewCLient()
-	deepseekMessage, err := sendMessage(messageMap, client)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Print(deepseekMessage.Content)
-	tools := deepseekMessage.ToolCalls
-	if len(tools) != 0 {
-		// 添加 assistant 消息上游
-		messageMap = append(messageMap, map[string]any{
-			"role":       "assistant",
-			"content":    deepseekMessage.Content,
-			"tool_calls": tools,
-		})
-		for _, val := range tools {
-			switch val.Function.Name {
-			case "get_weather":
-				weather := get_weather(113.324, 23.099)
-				messageMap = append(messageMap, map[string]any{
-					"role":         "tool",
-					"tool_call_id": val.ID,
-					"content":      weather,
-				})
-			case "get_current_time":
-				currentTime := get_current_time()
-				messageMap = append(messageMap, map[string]any{
-					"role":         "tool",
-					"tool_call_id": val.ID,
-					"content":      currentTime,
-				})
+	for i := 0; i < maxLoops; i++ {
+		deepSeekResponse, err := sendMessage(messageMap, client)
+		if err != nil {
+			fmt.Println("sendMessage error:" + err.Error())
+			return "Sorry, I'm having trouble processing your request right now."
+		}
+		fmt.Println("deepSeekResponse:", deepSeekResponse)
+		tools := deepSeekResponse.ToolCalls
+		if len(tools) != 0 {
+			// 添加 assistant 消息上游
+			messageMap = append(messageMap, map[string]any{
+				"role":       "assistant",
+				"content":    deepSeekResponse.Content,
+				"tool_calls": tools,
+			})
+			for _, val := range tools {
+				switch val.Function.Name {
+				case "get_weather":
+					var args struct {
+						Lon float64 `json:"lon"`
+						Lat float64 `json:"lat"`
+					}
+					if err := json.Unmarshal([]byte(val.Function.Arguments), &args); err != nil ||
+						args.Lon < -180 || args.Lon > 180 || args.Lat < -90 || args.Lat > 90 {
+
+						invalidArgCount++
+						messageMap = append(messageMap, map[string]any{
+							"role":         "tool",
+							"tool_call_id": val.ID,
+							"content":      "参数无效，请修正 lon/lat",
+						})
+						if invalidArgCount >= maxInvalidArgRetries {
+							return "AI助手出现了一些问题,请稍候再试"
+						}
+						break
+					}
+					weather := get_weather(args.Lon, args.Lat)
+					messageMap = append(messageMap, map[string]any{
+						"role":         "tool",
+						"tool_call_id": val.ID,
+						"content":      weather,
+					})
+				case "get_current_time":
+					currentTime := get_current_time()
+					messageMap = append(messageMap, map[string]any{
+						"role":         "tool",
+						"tool_call_id": val.ID,
+						"content":      currentTime,
+					})
+				case "get_user_history_and_preference":
+					var args struct {
+						UserId string `json:"user_id"`
+					}
+					if err := json.Unmarshal([]byte(val.Function.Arguments), &args); err != nil || args.UserId == "" {
+						invalidArgCount++
+						messageMap = append(messageMap, map[string]any{
+							"role":         "tool",
+							"tool_call_id": val.ID,
+							"content":      "参数无效，请修正 user_id",
+						})
+						if invalidArgCount >= maxInvalidArgRetries {
+							return "AI助手出现了一些问题,请稍候再试"
+						}
+						break
+
+					}
+					history := get_user_history_and_preference(args.UserId)
+					messageMap = append(messageMap, map[string]any{
+						"role":         "tool",
+						"tool_call_id": val.ID,
+						"content":      history,
+					})
+				}
 			}
+		} else {
+			// 没有调用工具，直接返回结果
+			return deepSeekResponse.Content
+
 		}
 	}
-	deepseekMessage, err = sendMessage(messageMap, client)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	return deepseekMessage.Content
+	return "Sorry, I'm having trouble processing your request right now."
 }
 
-func get_weather(lon float32, lat float32) (weather string) {
+func get_weather(lon float64, lat float64) (weather string) {
 	url := fmt.Sprintf("https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&appid=%s", lat, lon, authConfig.OpenWeatherKey)
 	method := "GET"
 	req, err := http.NewRequest(method, url, nil)
@@ -272,11 +321,16 @@ func get_weather(lon float32, lat float32) (weather string) {
 	if len(parsed.Weather) == 0 {
 		return
 	}
-	return parsed.Weather[0].Main
+	fmt.Print(parsed.Weather)
+	return fmt.Sprintf("%s", "The Main Weather: "+parsed.Weather[0].Main+", Description: "+parsed.Weather[0].Description)
 }
 
 func get_current_time() (currentTime string) {
 	return fmt.Sprintf("%d", time.Now().Unix())
+}
+
+func get_user_history_and_preference(userId string) (history string) {
+	return fmt.Sprintf("User %s has a history of ordering pizza and pasta, and prefers spicy food.", userId)
 }
 
 // Function calling 工具
@@ -285,10 +339,20 @@ var tools = []map[string]any{
 		"type": "function",
 		"function": map[string]any{
 			"name":        "get_weather",
-			"description": "Get weather of a location,  no parameter is needed. The location is obtained from the user's IP address.",
+			"description": "Get weather of a location, parameters lon and lat is needed.",
 			"parameters": map[string]any{
-				"type":       "object",
-				"properties": map[string]any{},
+				"type": "object",
+				"properties": map[string]any{
+					"lon": map[string]any{
+						"type":        "number",
+						"description": "The longitude of the location.",
+					},
+					"lat": map[string]any{
+						"type":        "number",
+						"description": "The latitude of the location.",
+					},
+				},
+				"required": []string{"lon", "lat"},
 			},
 		},
 	},
@@ -301,6 +365,23 @@ var tools = []map[string]any{
 				"type":       "object",
 				"properties": map[string]any{},
 				"required":   []string{},
+			},
+		},
+	},
+	{
+		"type": "function",
+		"function": map[string]any{
+			"name":        "get_user_history_and_preference",
+			"description": "Get user history and preference for personalized recommendations, parameter required is user_id. The user_id is a string that uniquely identifies a user in the system. ",
+			"parameters": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"user_id": map[string]any{
+						"type":        "string",
+						"description": "The unique identifier of the user.",
+					},
+				},
+				"required": []string{"user_id"},
 			},
 		},
 	},
