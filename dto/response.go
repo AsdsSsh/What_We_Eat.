@@ -7,7 +7,7 @@ type VerificationCodeResponse struct {
 
 // 验证码验证响应
 type VerifyCodeResponse struct {
-	UserID  uint   `json:"userId"`
+	UserID  string `json:"userId"`
 	Email   string `json:"email"`
 	Token   string `json:"token"`
 	Message string `json:"message"`

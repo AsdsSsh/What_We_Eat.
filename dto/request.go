@@ -12,12 +12,12 @@ type VerifyCodeRequest struct {
 }
 
 type RecommendationRequest struct {
-	UserID  uint   `json:"userId"`
+	UserID  string `json:"userId"`
 	Weather string `json:"weather"`
 	Time    string `json:"time"`
 }
 
 type DailyIntakeRequest struct {
-	UserID uint     `json:"userId"`
+	UserID string   `json:"userId"`
 	Foods  []string `json:"foods"`
 }

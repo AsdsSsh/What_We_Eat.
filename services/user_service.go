@@ -23,7 +23,7 @@ func (u *userServiceImpl) GetUserByEmail(email string) (*models.User, error) {
 	return &user, result.Error
 }
 
-func (u *userServiceImpl) GetUserChoices(userID uint) ([]models.UserChoice, error) {
+func (u *userServiceImpl) GetUserChoices(userID string) ([]models.UserChoice, error) {
 	db := database.GetDB()
 
 	var choices []models.UserChoice

@@ -2,6 +2,7 @@ package services
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -95,7 +96,7 @@ func (a *authServiceImpl) VerifyCode(email, code string) (*models.User, bool, er
 }
 
 // GenerateTokenByEmail 根据邮箱生成JWT token
-func (a *authServiceImpl) GenerateTokenByEmail(userID uint, email string) (string, error) {
+func (a *authServiceImpl) GenerateTokenByEmail(userID string, email string) (string, error) {
 	cfg := config.LoadConfig()
 
 	claims := jwt.MapClaims{
@@ -123,4 +124,28 @@ func generateRandomCode(length int) (string, error) {
 	}
 
 	return string(code), nil
+}
+
+// ParseToken 解析JWT token，返回用户ID和邮箱
+func (a *authServiceImpl) ParseToken(tokenString string) (jwt.MapClaims, error) {
+	if tokenString == "" {
+		return nil, fmt.Errorf("token不能为空")
+	}
+	cfg := config.LoadConfig()
+
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		if t.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected signing method")
+		}
+		return []byte(cfg.JWTSecret), nil
+	})
+	if err != nil || !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("invalid claims")
+	}
+	return claims, nil
 }

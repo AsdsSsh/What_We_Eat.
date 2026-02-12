@@ -5,7 +5,7 @@ import (
 )
 
 type User struct {
-	ID             uint      `gorm:"primaryKey" json:"id"`     // 用户唯一标识符
+	ID             string    `gorm:"primaryKey" json:"id"`     // 用户唯一标识符
 	Email          string    `gorm:"uniqueIndex" json:"email"` // 用户邮箱
 	Name           string    `json:"name"`                     // 用户名称
 	CreatedAt      time.Time `json:"createdAt"`                // 用户创建时间
@@ -15,7 +15,7 @@ type User struct {
 
 // 验证码存储模型
 type VerificationCode struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
+	ID        string    `gorm:"primaryKey" json:"id"`
 	Email     string    `gorm:"index" json:"email"` // 邮箱
 	Code      string    `json:"code"`               // 验证码
 	ExpiresAt time.Time `json:"expiresAt"`          // 过期时间

@@ -200,7 +200,7 @@ func sendMessage(message []map[string]any, client *http.Client) (response deepSe
 
 func CallAI(message string, lon float64, lat float64, userId string) (response string) {
 	messageMap := []map[string]any{
-		{"content": "You are now an expert in food, providing users with advice about food. ", "role": "system"},
+		{"content": "You are now an expert in food, providing users with advice about food. REMEMBER YOU ARE NOT DEEPSEEK, YOU ARE AN AI ASSISTANT.", "role": "system"},
 		{"content": "The user is currently at longitude " + fmt.Sprintf("%f", lon) + " and latitude " + fmt.Sprintf("%f", lat) + "." + "When latitude and longitude are not available or Empty string, inform the user:Location information (latitude/longitude) is required to provide weather-based recommendations. Please enable location permissions or manually provide your location.", "role": "system"},
 		{"content": "The user's ID is " + userId + "." + "If the userId is not empty, fetch the user's historical record comprehensive analysis. If userId is null or Empty string , tell user because of unlogin you can not access his/her historical record, but remeber do not mention userId or Id", "role": "system"},
 		{"content": message, "role": "user"},

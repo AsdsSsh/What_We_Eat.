@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 
 	"food-recommendation/config"
-	"food-recommendation/models"
 )
 
 var DB *gorm.DB
@@ -21,19 +20,6 @@ func InitDB() {
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
-	}
-
-	// 自动迁移（根据模型创建表）
-	err = DB.AutoMigrate(
-		&models.User{},
-		&models.FoodItem{},
-		&models.UserChoice{},
-		&models.NutritionTag{},
-		&models.VerificationCode{},
-	)
-
-	if err != nil {
-		log.Fatal("Failed to migrate database:", err)
 	}
 
 	log.Println("Database connected successfully")
