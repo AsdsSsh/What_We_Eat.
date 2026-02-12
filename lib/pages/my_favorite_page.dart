@@ -160,6 +160,7 @@ class _MyfavoritePageState extends State<MyfavoritePage> {
             description: fav.description,
             ingredients: [],
             steps: [],
+            nutritionTags: [],
           );
           Navigator.push(
             context,

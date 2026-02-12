@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/i18n/translations.dart';
@@ -21,9 +22,7 @@ class BottomNavBar extends StatefulWidget {
 class _BottomNavBarState extends State<BottomNavBar> {
   String _selectedLanguage = 'zh';
 
-  String t(String key) {
-    return Translations.translate(key, _selectedLanguage);
-  }
+  String t(String key) => Translations.translate(key, _selectedLanguage);
 
   @override
   void initState() {
@@ -34,132 +33,211 @@ class _BottomNavBarState extends State<BottomNavBar> {
   Future<void> _initLanguageFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString('selectedLanguage') ?? 'zh';
-    setState(() {
-      _selectedLanguage = saved;
-    });
+    setState(() => _selectedLanguage = saved);
     appLanguageNotifier.value = saved;
   }
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-        valueListenable: appLanguageNotifier,
-        builder: (context, lang, child) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          _selectedLanguage = lang;
-          return Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, -5),
+      valueListenable: appLanguageNotifier,
+      builder: (context, lang, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        _selectedLanguage = lang;
+
+        return ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.35)
+                    : Colors.white.withValues(alpha: 0.6),
+                border: Border(
+                  top: BorderSide(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.white.withValues(alpha: 0.9),
+                    width: 0.5,
+                  ),
                 ),
-              ],
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Expanded(
-                      child: _buildNavItem(
-                        context,
-                        index: 0,
-                        icon: Icons.home_outlined,
-                        activeIcon: Icons.home_rounded,
-                        label: t('home'),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Expanded(
+                        child: _NavItem(
+                          index: 0,
+                          selectedIndex: widget.selectedIndex,
+                          icon: Icons.home_outlined,
+                          activeIcon: Icons.home_rounded,
+                          label: t('home'),
+                          isDark: isDark,
+                          onTap: widget.onTabChange,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: _buildNavItem(
-                        context,
-                        index: 1,
-                        icon: Icons.restaurant_menu_outlined,
-                        activeIcon: Icons.restaurant_menu_rounded,
-                        label: t('cook'),
+                      Expanded(
+                        child: _NavItem(
+                          index: 1,
+                          selectedIndex: widget.selectedIndex,
+                          icon: Icons.restaurant_menu_outlined,
+                          activeIcon: Icons.restaurant_menu_rounded,
+                          label: t('cook'),
+                          isDark: isDark,
+                          onTap: widget.onTabChange,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: _buildNavItem(
-                        context,
-                        index: 2,
-                        icon: Icons.search_outlined,
-                        activeIcon: Icons.search_rounded,
-                        label: t('search'),
+                      Expanded(
+                        child: _NavItem(
+                          index: 2,
+                          selectedIndex: widget.selectedIndex,
+                          icon: Icons.search_outlined,
+                          activeIcon: Icons.search_rounded,
+                          label: t('search'),
+                          isDark: isDark,
+                          onTap: widget.onTabChange,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
   }
+}
 
-  Widget _buildNavItem(
-    BuildContext context, {
-    required int index,
-    required IconData icon,
-    required IconData activeIcon,
-    required String label,
-  }) {
-    final isSelected = widget.selectedIndex == index;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+// =====================================================================
+//  单个导航项 — 带缩放 + 渐变高亮
+// =====================================================================
+class _NavItem extends StatefulWidget {
+  final int index;
+  final int selectedIndex;
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool isDark;
+  final Function(int)? onTap;
 
+  const _NavItem({
+    required this.index,
+    required this.selectedIndex,
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.isDark,
+    this.onTap,
+  });
+
+  @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem>
+    with SingleTickerProviderStateMixin {
+  bool _pressed = false;
+
+  bool get _isSelected => widget.selectedIndex == widget.index;
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => widget.onTabChange?.call(index),
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap?.call(widget.index);
+      },
+      onTapCancel: () => setState(() => _pressed = false),
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: AnimatedScale(
+        scale: _pressed ? 0.88 : 1.0,
+        duration: const Duration(milliseconds: 120),
         curve: Curves.easeInOut,
-        padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 20 : 16,
-          vertical: 10,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primaryColor.withValues(alpha: 0.12)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              size: 24,
-              color: isSelected
-                  ? AppTheme.primaryColor
-                  : (isDark
-                      ? AppTheme.textSecondaryDark
-                      : AppTheme.textSecondaryLight),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              child: isSelected
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(width: 8),
-                        Text(
-                          label,
-                          style: const TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.symmetric(
+            horizontal: _isSelected ? 16 : 12,
+            vertical: 10,
+          ),
+          decoration: BoxDecoration(
+            gradient: _isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withValues(alpha: 0.15),
+                      AppTheme.primaryColor.withValues(alpha: 0.06),
+                    ],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: _isSelected
+                ? [
+                    BoxShadow(
+                      color:
+                          AppTheme.primaryColor.withValues(alpha: 0.12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 图标（选中时用渐变着色）
+              _isSelected
+                  ? ShaderMask(
+                      shaderCallback: (bounds) =>
+                          AppTheme.primaryGradient.createShader(bounds),
+                      blendMode: BlendMode.srcIn,
+                      child: Icon(
+                        widget.activeIcon,
+                        size: 24,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(
+                      widget.icon,
+                      size: 24,
+                      color: widget.isDark
+                          ? AppTheme.textSecondaryDark
+                          : AppTheme.textSecondaryLight,
+                    ),
+
+              // 标签（选中时展开）
+              AnimatedSize(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                child: _isSelected
+                    ? Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: ShaderMask(
+                          shaderCallback: (bounds) =>
+                              AppTheme.primaryGradient.createShader(bounds),
+                          blendMode: BlendMode.srcIn,
+                          child: Text(
+                            widget.label,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                      ],
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
         ),
       ),
     );

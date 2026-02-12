@@ -25,7 +25,12 @@ class FoodDatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 1, onCreate: _createTables);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createTables,
+      onUpgrade: _onUpgrade,
+    );
   }
 
 
@@ -36,7 +41,9 @@ class FoodDatabaseHelper {
         name TEXT,
         description TEXT,
         ingredients TEXT,
-        steps TEXT
+        steps TEXT,
+        nutritionTags TEXT
+
       )
     ''');
     // 新增原材料表
@@ -66,6 +73,9 @@ class FoodDatabaseHelper {
           description: item['description'] as String,
           ingredients: List<String>.from(item['ingredients']),
           steps: List<String>.from(item['steps']),
+          nutritionTags: item['nutritionTags'] != null
+              ? List<String>.from(item['nutritionTags'])
+              : <String>[],
         );
         await db.insert('foods', food.toMap());
         print('初始化 ${jsonList.length} 条菜谱');
@@ -89,6 +99,18 @@ class FoodDatabaseHelper {
       print('初始化 ${rmList.length} 条食材');
     } catch (e) {
       print('❌ 初始化失败: $e');
+    }
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      final tableInfo = await db.rawQuery('PRAGMA table_info(foods)');
+      final hasNutritionTags = tableInfo.any(
+        (row) => row['name'] == 'nutritionTags',
+      );
+      if (!hasNutritionTags) {
+        await db.execute('ALTER TABLE foods ADD COLUMN nutritionTags TEXT');
+      }
     }
   }
 

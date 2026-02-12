@@ -9,6 +9,7 @@ class Food {
   String description;
   List<String> ingredients;
   List<String> steps;
+  List<String> nutritionTags;
 
 
   Food({
@@ -16,11 +17,20 @@ class Food {
     required this.name,
     required this.description,
     required this.ingredients,
-    required this.steps
-  });
+    required this.steps,
+    List<String>? nutritionTags,
+  }) : nutritionTags = nutritionTags ?? <String>[];
 
 
   factory Food.fromMap(Map<String, dynamic> map) {
+    final rawTags = map['nutritionTags'];
+    List<String> decodedTags = [];
+    if (rawTags is String && rawTags.isNotEmpty) {
+      decodedTags = List<String>.from(jsonDecode(rawTags));
+    } else if (rawTags is List) {
+      decodedTags = List<String>.from(rawTags);
+    }
+
     return Food(
       id: map['id'] as String,
       name: map['name'] as String? ?? '',
@@ -31,6 +41,7 @@ class Food {
       steps: map['steps'] != null
           ? List<String>.from(jsonDecode(map['steps'] as String))
           : [],
+      nutritionTags: decodedTags,
     );
   }
 
@@ -41,6 +52,7 @@ class Food {
         'description': description,
         'ingredients': jsonEncode(ingredients),
         'steps': jsonEncode(steps),
+        'nutritionTags': jsonEncode(nutritionTags),
       };
     }
 

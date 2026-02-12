@@ -120,6 +120,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage>
         setState(() {
           widget.recipeInfo.ingredients = food.ingredients;
           widget.recipeInfo.steps = food.steps;
+          widget.recipeInfo.nutritionTags = food.nutritionTags;
         });
       }
     });
@@ -419,6 +420,7 @@ class _RecipeDetailPageState extends State<RecipeDetailPage>
   //  主内容区
   // =====================================================================
   Widget _buildContentBody(bool isDark) {
+    final hasTags = widget.recipeInfo.nutritionTags.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
       child: Column(
@@ -426,6 +428,19 @@ class _RecipeDetailPageState extends State<RecipeDetailPage>
         children: [
           // ---- 快捷信息卡片行 ----
           _buildQuickInfoRow(isDark),
+          if (hasTags) ...[
+            const SizedBox(height: 16),
+            _buildSectionCard(
+              isDark: isDark,
+              icon: Icons.local_offer_rounded,
+              iconColor: AppTheme.accentOrange,
+              gradient: AppTheme.orangeGradient,
+              title: _selectedLanguage == 'zh'
+                  ? '营养标签 (${widget.recipeInfo.nutritionTags.length})'
+                  : 'Nutrition Tags (${widget.recipeInfo.nutritionTags.length})',
+              child: _buildNutritionTagsList(isDark),
+            ),
+          ],
           const SizedBox(height: 24),
 
           // ---- 食材区 ----
@@ -636,6 +651,49 @@ class _RecipeDetailPageState extends State<RecipeDetailPage>
   }
 
   // ---- 食材列表 ----
+  Widget _buildNutritionTagsList(bool isDark) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: widget.recipeInfo.nutritionTags.map((tag) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.accentOrange.withValues(alpha: isDark ? 0.18 : 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.accentOrange.withValues(
+                alpha: isDark ? 0.28 : 0.2,
+              ),
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.local_offer_rounded,
+                size: 14,
+                color: AppTheme.accentOrange,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                tag,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppTheme.textPrimaryDark
+                      : AppTheme.textPrimaryLight,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildIngredientsList(bool isDark) {
     return Wrap(
       spacing: 8,
