@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
-
 	"food-recommendation/database"
 	"food-recommendation/routes"
 	"food-recommendation/services"
+	"log"
+
+	"food-recommendation/cache"
 )
 
 func main() {
@@ -18,6 +19,9 @@ func main() {
 
 	// 创建并启动服务器
 	router := routes.SetupRouter()
+
+	// 初始化验证码缓存
+	cache.GetVerificationCodeCache()
 
 	port := ":8080"
 	fmt.Printf("Server starting on port %s\n", port)

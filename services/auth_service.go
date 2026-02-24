@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 
+	"food-recommendation/cache"
 	"food-recommendation/config"
 	"food-recommendation/database"
 	"food-recommendation/models"
@@ -18,28 +19,13 @@ type authServiceImpl struct{}
 
 // GenerateVerificationCode 生成6位数验证码并存储
 func (a *authServiceImpl) GenerateVerificationCode(email string) error {
-	db := database.GetDB()
 
 	// 生成6位随机验证码
 	code, err := generateRandomCode(6)
 	if err != nil {
 		return err
 	}
-
-	// 删除该邮箱之前的验证码
-	db.Where("email = ?", email).Delete(&models.VerificationCode{})
-
-	// 创建新的验证码记录，5分钟后过期
-	verificationCode := models.VerificationCode{
-		Email:     email,
-		Code:      code,
-		ExpiresAt: time.Now().Add(5 * time.Minute),
-		CreatedAt: time.Now(),
-	}
-
-	if err := db.Create(&verificationCode).Error; err != nil {
-		return err
-	}
+	cache.AddVerificationCode(email, code)
 
 	// 发送验证码邮件
 	if err := EmailRepo.SendVerificationCode(email, code); err != nil {
@@ -55,26 +41,17 @@ func (a *authServiceImpl) VerifyCode(email, code string) (*models.User, bool, er
 	db := database.GetDB()
 
 	// 查找验证码
-	var verificationCode models.VerificationCode
-	result := db.Where("email = ? AND code = ?", email, code).First(&verificationCode)
-	if result.Error != nil {
-		return nil, false, result.Error
+	cachedCode, exists := cache.GetVerificationCode(email)
+	if !exists || cachedCode != code {
+		return nil, false, fmt.Errorf("invalid or expired verification code")
 	}
-
-	// 检查是否过期
-	if time.Now().After(verificationCode.ExpiresAt) {
-		// 删除过期验证码
-		db.Delete(&verificationCode)
-		return nil, false, gorm.ErrRecordNotFound
-	}
-
 	// 验证成功，删除验证码
-	db.Delete(&verificationCode)
+	cache.DeleteVerificationCode(email)
 
 	// 查找或创建用户
 	var user models.User
 	isNew := false
-	result = db.Where("email = ?", email).First(&user)
+	result := db.Where("email = ?", email).First(&user)
 
 	if result.Error == gorm.ErrRecordNotFound {
 		// 创建新用户
