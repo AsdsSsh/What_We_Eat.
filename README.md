@@ -6,6 +6,10 @@
 - 同步客户端用户数据
 - 使用Function Calling 为前端提供AI推荐
 
+## 文档
+
+- 接口文档：`API.md`
+
 ## gitignore
 
 - config/config.go放入gitignore因为涉及key和服务器连接信息

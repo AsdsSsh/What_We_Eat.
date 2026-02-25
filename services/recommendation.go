@@ -112,16 +112,23 @@ func BasicRule(month int, day int, hour int) []models.FoodItem {
 
 	var activeTags []string
 	for _, rule := range rules {
-		if rule.when(month, day, hour) {
+		if rule.when(0, day, hour) {
+			activeTags = append(activeTags, rule.tags...)
+			println("rule matched:", rule.name)
+		}
+		if rule.when(month, day, 0) {
+			println("rule matched:", rule.name)
 			activeTags = append(activeTags, rule.tags...)
 		}
 	}
 
-	// 如果没有命中规则，默认返回少量菜品
 	db := database.GetDB()
 	query := db.Model(&models.FoodItem{})
-	for _, tag := range activeTags {
-		query = query.Where("? = ANY(tags)", tag)
+	if len(activeTags) > 0 {
+		query = query.Where("? = ANY(nutrition_tags)", activeTags[0])
+		for _, tag := range activeTags[1:] {
+			query = query.Or("? = ANY(nutrition_tags)", tag)
+		}
 	}
 
 	query.Limit(10).Find(&foods)

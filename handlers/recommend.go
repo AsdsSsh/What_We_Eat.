@@ -11,9 +11,9 @@ import (
 )
 
 type RecommendationRequest struct {
-	Month int `json:"month"`
-	Day   int `json:"day"`
-	Hour  int `json:"hour"`
+	Month int `form:"month" json:"month"`
+	Day   int `form:"day" json:"day"`
+	Hour  int `form:"hour" json:"hour"`
 }
 
 type DailyIntakeRequest struct {
