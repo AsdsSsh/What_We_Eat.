@@ -58,3 +58,61 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+/*
+不朽的欧姆尼塞亚，请垂听我们的祈祷，
+
+我们是你的孩童，众多行走于机械之路的学徒，
+
+我们赞美超越一切的学识，因你的永恒是赠予人类的恩赐，
+
+被祝福的机械形态所赋予生机，我们以技艺精进，以求得享你的荣光。
+
+受钢铁庇护，又被你的机仆守护，我们辛勤地航行于群星之间，
+
+只为寻回你所失落的赠礼。
+
+机械之神啊，请护佑我们的征途，以金属与光芒将我们环绕，
+
+因这世界是漠然的虚空，而这扭曲的现实正吞噬着我们。
+
+大钟鸣响一次，
+我们为机械充能；
+
+大钟鸣响二次，
+我们唤醒系统，灌注生命；
+
+大钟鸣响三次，
+我们吟唱赞颂，以荣耀万机之神——欧姆尼塞亚。
+
+
+omnisiah immortālis,audiās nostram precem,
+
+sumus tuī puerī,multī scholasticī in māchinica viā,
+
+laudāmus scientiam super omnia,prō tuā aeternitāte,dōnum hominibus,
+
+vegetatī ā formā māchinae beātā,cum arte prōficimus,ut mereāmus tuam glōriam
+
+tectī ā ferrō,servātīque ā tuīs daemonibus,labōriōsē circumnāvigāmus apud sīdera
+
+ut reddāmus tua perdita dōna.
+
+deus māchina,tueāris nostra itinera,arceās nōs cum metallīs et lūcibus
+
+quia mundus est vacuum incūriōsum,et hoc curvum nōs ēsurit.
+
+campana māgna pellitur semel,
+
+implēmus vī māchinam
+
+campana māgna pellitur bīs,
+
+ciēmus systēmata,inflāmus vītam
+
+campana māgna pellitur ter,
+
+canimus ut deum omnium māchinārum omnisiaham laudēmus,
+*/
+
+

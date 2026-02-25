@@ -10,6 +10,7 @@ class Food {
   List<String> ingredients;
   List<String> steps;
   List<String> nutritionTags;
+  double budget;
 
 
   Food({
@@ -19,7 +20,11 @@ class Food {
     required this.ingredients,
     required this.steps,
     List<String>? nutritionTags,
+    this.budget = 0,
   }) : nutritionTags = nutritionTags ?? <String>[];
+
+
+  factory Food.fromJson(Map<String, dynamic> json) => Food.fromMap(json);
 
 
   factory Food.fromMap(Map<String, dynamic> map) {
@@ -42,6 +47,7 @@ class Food {
           ? List<String>.from(jsonDecode(map['steps'] as String))
           : [],
       nutritionTags: decodedTags,
+      budget: (map['budget'] as num?)?.toDouble() ?? 0,
     );
   }
 
@@ -53,6 +59,7 @@ class Food {
         'ingredients': jsonEncode(ingredients),
         'steps': jsonEncode(steps),
         'nutritionTags': jsonEncode(nutritionTags),
+        'budget': budget,
       };
     }
 

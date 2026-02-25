@@ -1,7 +1,10 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:what_we_eat/database/food_database_helper.dart';
 import 'package:what_we_eat/i18n/translations.dart';
+import 'package:what_we_eat/models/food.dart';
+import 'package:what_we_eat/pages/recipe_detail_page.dart';
 import 'package:what_we_eat/pages/setting_page.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 
@@ -16,22 +19,12 @@ class _RandomRecipePageState extends State<RandomRecipePage>
     with TickerProviderStateMixin {
   int _recipeCount = 3;
   double _budget = 50;
-  List<Map<String, dynamic>> _randomRecipes = [];
+  List<Food> _randomRecipes = [];
   bool _hasGenerated = false;
+  bool _isLoading = false;
 
-  // 假数据
-  final List<Map<String, dynamic>> _allRecipes = [
-    {'name_zh': '番茄炒蛋', 'name_en': 'Tomato Scrambled Eggs', 'price': 15, 'icon': Icons.egg_rounded},
-    {'name_zh': '红烧排骨', 'name_en': 'Braised Pork Ribs', 'price': 45, 'icon': Icons.lunch_dining_rounded},
-    {'name_zh': '清炒时蔬', 'name_en': 'Stir-fried Vegetables', 'price': 12, 'icon': Icons.eco_rounded},
-    {'name_zh': '宫保鸡丁', 'name_en': 'Kung Pao Chicken', 'price': 28, 'icon': Icons.restaurant_rounded},
-    {'name_zh': '麻婆豆腐', 'name_en': 'Mapo Tofu', 'price': 18, 'icon': Icons.soup_kitchen_rounded},
-    {'name_zh': '糖醋里脊', 'name_en': 'Sweet and Sour Pork', 'price': 35, 'icon': Icons.set_meal_rounded},
-    {'name_zh': '酸辣土豆丝', 'name_en': 'Shredded Potatoes', 'price': 10, 'icon': Icons.grass_rounded},
-    {'name_zh': '鱼香肉丝', 'name_en': 'Yu Xiang Pork', 'price': 25, 'icon': Icons.ramen_dining_rounded},
-    {'name_zh': '蒜蓉西兰花', 'name_en': 'Garlic Broccoli', 'price': 14, 'icon': Icons.spa_rounded},
-    {'name_zh': '回锅肉', 'name_en': 'Twice-cooked Pork', 'price': 30, 'icon': Icons.local_pizza_rounded},
-  ];
+  // 从数据库加载的真实食物数据
+  List<Food> _allFoods = [];
 
   // 页面统一主色：暖粉金
   static const Color _accent = Color(0xFFfa709a);
@@ -62,6 +55,17 @@ class _RandomRecipePageState extends State<RandomRecipePage>
   void initState() {
     super.initState();
     _initAnimations();
+    _loadFoodsFromDatabase();
+  }
+
+  /// 从数据库加载真实食物数据
+  Future<void> _loadFoodsFromDatabase() async {
+    final foods = await FoodDatabaseHelper.instance.getAllFoods();
+    if (mounted) {
+      setState(() {
+        _allFoods = foods;
+      });
+    }
   }
 
   void _initAnimations() {
@@ -123,13 +127,15 @@ class _RandomRecipePageState extends State<RandomRecipePage>
   }
 
   void _generateRandomRecipes() {
+    if (_allFoods.isEmpty) return;
+
     _diceController.forward(from: 0);
 
     final random = Random();
-    final filteredRecipes =
-        _allRecipes.where((r) => r['price'] <= _budget).toList();
+    final filteredFoods =
+        _allFoods.where((f) => f.budget <= _budget).toList();
 
-    if (filteredRecipes.isEmpty) {
+    if (filteredFoods.isEmpty) {
       setState(() {
         _randomRecipes = [];
         _hasGenerated = true;
@@ -138,9 +144,9 @@ class _RandomRecipePageState extends State<RandomRecipePage>
       return;
     }
 
-    filteredRecipes.shuffle(random);
+    filteredFoods.shuffle(random);
     setState(() {
-      _randomRecipes = filteredRecipes.take(_recipeCount).toList();
+      _randomRecipes = filteredFoods.take(_recipeCount).toList();
       _hasGenerated = true;
     });
     _triggerResultAnimation();
@@ -716,106 +722,116 @@ class _RandomRecipePageState extends State<RandomRecipePage>
 
   // ---- 单张结果卡片 ----
   Widget _buildRecipeResultCard(
-      bool isDark, Map<String, dynamic> recipe, int index) {
+      bool isDark, Food food, int index) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.07)
-                  : Colors.white.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : _accent.withValues(alpha: 0.12),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: _accent.withValues(alpha: isDark ? 0.08 : 0.06),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RecipeDetailPage(recipeInfo: food),
             ),
-            child: Row(
-              children: [
-                // 统一主色渐变图标
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: _accentGradient),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _accent.withValues(alpha: 0.25),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    recipe['icon'] as IconData? ?? Icons.restaurant_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+          );
+        },
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.07)
+                    : Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : _accent.withValues(alpha: 0.12),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _lang == 'zh'
-                            ? recipe['name_zh']
-                            : recipe['name_en'],
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? AppTheme.textPrimaryDark
-                              : AppTheme.textPrimaryLight,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '#${index + 1}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _accent.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                boxShadow: [
+                  BoxShadow(
+                    color: _accent.withValues(alpha: isDark ? 0.08 : 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-                // 价格胶囊
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _accent.withValues(alpha: isDark ? 0.15 : 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _accent.withValues(alpha: 0.18),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // 统一主色渐变图标
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: _accentGradient),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _accent.withValues(alpha: 0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.restaurant_rounded,
+                      color: Colors.white,
+                      size: 24,
                     ),
                   ),
-                  child: Text(
-                    '¥${recipe['price']}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: _accent,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          food.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? AppTheme.textPrimaryDark
+                                : AppTheme.textPrimaryLight,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          food.description,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _accent.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  // 价格胶囊
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _accent.withValues(alpha: isDark ? 0.15 : 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _accent.withValues(alpha: 0.18),
+                      ),
+                    ),
+                    child: Text(
+                      '¥${food.budget.toInt()}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: _accent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -826,7 +842,7 @@ class _RandomRecipePageState extends State<RandomRecipePage>
   // ---- 总价行 ----
   Widget _buildTotalRow(bool isDark) {
     final total =
-        _randomRecipes.fold<int>(0, (sum, r) => sum + (r['price'] as int));
+        _randomRecipes.fold<double>(0, (sum, f) => sum + f.budget);
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -886,7 +902,7 @@ class _RandomRecipePageState extends State<RandomRecipePage>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '¥$total',
+                  '¥${total.toInt()}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,

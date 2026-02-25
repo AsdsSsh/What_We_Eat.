@@ -1,11 +1,16 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/i18n/translations.dart';
+import 'package:what_we_eat/models/food.dart';
 import 'package:what_we_eat/pages/ai_assistant_page.dart';
 import 'package:what_we_eat/pages/random_recipe_page.dart';
+import 'package:what_we_eat/pages/recipe_detail_page.dart';
 import 'package:what_we_eat/pages/setting_page.dart';
+import 'package:what_we_eat/providers/auth_provider.dart';
+import 'package:what_we_eat/services/recommend_service.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -85,8 +90,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   String _selectedLanguage = 'zh';
-  late String _currentReason;
-  late String _recommendedDish;
+  String _recommendedDish = '';
+  String _recommendedDescription = '';
+  Food? _currentRecommendation;
 
   // ---- 动画控制器 ----
   late AnimationController _staggerController;
@@ -105,44 +111,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   // 菜名切换动画
   late Animation<double> _dishFade;
 
-  final List<Map<String, String>> _recommendations = [
-    {
-      'reason_zh': '现在是早晨，来一份营养均衡的早餐吧',
-      'reason_en': 'It\'s morning, time for a balanced breakfast',
-      'dish_zh': '番茄鸡蛋面',
-      'dish_en': 'Tomato Egg Noodles',
-    },
-    {
-      'reason_zh': '您今天已经吃了较多肉类，推荐一道清淡的蔬菜',
-      'reason_en': 'You\'ve had a lot of meat today, try some vegetables',
-      'dish_zh': '清炒时蔬',
-      'dish_en': 'Stir-fried Vegetables',
-    },
-    {
-      'reason_zh': '现在是晚餐时间，来点容易消化的食物',
-      'reason_en': 'It\'s dinner time, try something easy to digest',
-      'dish_zh': '小米粥配凉拌黄瓜',
-      'dish_en': 'Millet Porridge with Cucumber Salad',
-    },
-    {
-      'reason_zh': '根据营养学建议，您需要补充更多蛋白质',
-      'reason_en': 'Based on nutrition advice, you need more protein',
-      'dish_zh': '红烧排骨',
-      'dish_en': 'Braised Pork Ribs',
-    },
-    {
-      'reason_zh': '天气有点冷，来碗热腾腾的汤暖暖身子',
-      'reason_en': 'It\'s cold outside, warm up with a hot soup',
-      'dish_zh': '酸辣汤',
-      'dish_en': 'Hot and Sour Soup',
-    },
-    {
-      'reason_zh': '周末了，犒劳一下自己吧',
-      'reason_en': 'It\'s weekend, treat yourself',
-      'dish_zh': '糖醋里脊',
-      'dish_en': 'Sweet and Sour Pork',
-    },
-  ];
+  List<Food> _recommendations = [];
 
   // 浮动光球
   late List<_FloatingOrb> _orbs;
@@ -155,7 +124,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _askLocationOnFirstLaunch();
     _initAnimations();
     _initOrbs();
+    _initRecommendations();
   }
+
+
+  Future<void> _initRecommendations() async {
+    try {
+      final userId = Provider.of<AuthProvider>(context, listen: false).userId;
+      final recommendations =
+          await RecommendService.getRecommendFoods(userId: userId);
+      setState(() {
+        _recommendations = recommendations;
+      });
+      _refreshRecommendation(animate: false);
+    } catch (e) {
+      debugPrint('Failed to load recommendations: $e');
+    }
+  }
+
 
   // ---- 初始化浮动光球 ----
   void _initOrbs() {
@@ -293,26 +279,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   // ---- 推荐刷新 ----
   void _refreshRecommendation({bool animate = true}) {
+    if (_recommendations.isEmpty) return;
     final random = Random();
     final index = random.nextInt(_recommendations.length);
     final rec = _recommendations[index];
+    final dishName = rec.name;
+    final dishDescription = rec.description;
 
     if (animate) {
       _refreshSpinController.forward(from: 0);
       _dishFadeController.reverse().then((_) {
         setState(() {
-          _currentReason =
-              _selectedLanguage == 'zh' ? rec['reason_zh']! : rec['reason_en']!;
-          _recommendedDish =
-              _selectedLanguage == 'zh' ? rec['dish_zh']! : rec['dish_en']!;
+          _recommendedDish = dishName;
+          _recommendedDescription = dishDescription;
+          _currentRecommendation = rec;
         });
         _dishFadeController.forward();
       });
     } else {
-      _currentReason =
-          _selectedLanguage == 'zh' ? rec['reason_zh']! : rec['reason_en']!;
-      _recommendedDish =
-          _selectedLanguage == 'zh' ? rec['dish_zh']! : rec['dish_en']!;
+      setState(() {
+        _recommendedDish = dishName;
+        _recommendedDescription = dishDescription;
+        _currentRecommendation = rec;
+      });
     }
   }
 
@@ -672,53 +661,38 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
               ),
               const SizedBox(height: 14),
-
-              // 推荐理由
               FadeTransition(
                 opacity: _dishFade,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.lightbulb_rounded,
-                        color: isDark
-                            ? Colors.amber.shade300
-                            : Colors.amber.shade700,
-                        size: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _currentReason,
-                        style: TextStyle(
-                          color: isDark
-                              ? AppTheme.textSecondaryDark
-                              : AppTheme.textSecondaryLight,
-                          fontSize: 14,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  _recommendedDescription.isNotEmpty
+                      ? _recommendedDescription
+                      : (_selectedLanguage == 'zh'
+                          ? '暂无描述'
+                          : 'No description yet'),
+                  style: TextStyle(
+                    color: isDark
+                        ? AppTheme.textSecondaryDark
+                        : AppTheme.textSecondaryLight,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
 
               // CTA 按钮 — 渐变 + 点击缩放
               _AnimatedGradientButton(
-                label:
-                    _selectedLanguage == 'zh' ? '查看做法' : 'View Recipe',
+                label: _selectedLanguage == 'zh' ? '查看做法' : 'View Recipe',
                 gradient: AppTheme.primaryGradient,
                 onPressed: () {
-                  // TODO: 跳转到菜谱详情
+                  final recipe = _currentRecommendation;
+                  if (recipe == null) return;
+                  Navigator.push(
+                    context,
+                    _SlideFadeRoute(
+                      page: RecipeDetailPage(recipeInfo: recipe),
+                    ),
+                  );
                 },
               ),
                   ],
@@ -888,14 +862,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildQuickTipBanner(bool isDark) {
     final tips = _selectedLanguage == 'zh'
         ? [
-            '💡 试试向左滑动发现更多菜谱',
-            '💡 每日三餐营养均衡最重要',
-            '💡 AI 助手可以根据你的口味推荐',
+            '青青高槐叶，采掇付中厨。新面来近市，汁滓宛相俱',
+            '每日三餐营养均衡最重要',
+            'AI 助手可以根据你的口味推荐',
+            '切肉的方式反映了你的生活态度',
+            '告诉我你吃什么，我就能告诉你是什么样的人',
+            '没有比热爱食物更真诚的爱',
+            '⚙️ 赞美欧姆尼赛亚!!!!!'
           ]
         : [
-            '💡 Swipe left to discover more recipes',
-            '💡 A balanced diet matters most',
-            '💡 AI assistant recommends by your taste',
+            'The lush green leaves of tall locust trees,\nAre picked and sent to the kitchen with ease.\nFresh flour from the market near is brought,\nJuice and dregs, as if blending as they ought.',
+            'A balanced diet matters most',
+            'AI assistant recommends by your taste',
+            'The way you cut your meat reflects the way you live',
+            'Tell me what you eat, and I will tell you what you are',
+            'There is no love sincerer than the love of food',
+            '⚙️ Praise the Omnissiah!!!'
           ];
     final tip = tips[DateTime.now().second % tips.length];
 

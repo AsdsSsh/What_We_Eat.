@@ -5,7 +5,8 @@
     "description": "简单易做，适合快手早餐",
     "ingredients": ["番茄", "鸡蛋"],
     "steps": ["切番茄", "打鸡蛋", "炒制"],
-    "nutritionTags": ["高蛋白", "清淡"]
+    "nutritionTags": ["高蛋白", "清淡", "早餐", "回暖"],
+    "budget": 12
   },
   {
     "id": "2",
@@ -13,7 +14,8 @@
     "description": "经典川菜，酸辣开胃",
     "ingredients": ["鸡胸肉", "花生米", "干辣椒"],
     "steps": ["切鸡肉丁", "炒花生米", "炒制"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "午餐", "开胃"],
+    "budget": 28
   },
   {
     "id": "3",
@@ -21,7 +23,8 @@
     "description": "家常菜，肥而不腻",
     "ingredients": ["五花肉", "酱油", "糖"],
     "steps": ["切肉块", "炒糖色", "炖煮"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "晚餐", "温补"],
+    "budget": 35
   },
   {
     "id": "4",
@@ -29,7 +32,8 @@
     "description": "暖胃汤品，营养丰富",
     "ingredients": ["豆腐", "木耳", "鸡蛋"],
     "steps": ["切豆腐", "调制汤底", "煮制"],
-    "nutritionTags": ["清淡", "低脂"]
+    "nutritionTags": ["清淡", "低脂", "午餐", "暖胃"],
+    "budget": 15
   },
   {
     "id": "5",
@@ -37,7 +41,8 @@
     "description": "清淡健康，保留鱼鲜",
     "ingredients": ["鱼", "姜", "葱"],
     "steps": ["洗鱼", "铺配菜", "蒸制"],
-    "nutritionTags": ["高蛋白", "低脂", "清淡"]
+    "nutritionTags": ["高蛋白", "低脂", "清淡", "晚餐", "清爽"],
+    "budget": 40
   },
   {
     "id": "6",
@@ -45,7 +50,8 @@
     "description": "异域风味，简单易做",
     "ingredients": ["土豆", "洋葱", "油"],
     "steps": ["切土豆", "炒洋葱", "炖煮"],
-    "nutritionTags": ["素食", "丰盛"]
+    "nutritionTags": ["素食", "丰盛", "午餐", "开胃"],
+    "budget": 18
   },
   {
     "id": "7",
@@ -53,7 +59,8 @@
     "description": "快手主食，简单美味",
     "ingredients": ["米", "鸡蛋", "葱"],
     "steps": ["打鸡蛋", "加米饭", "快速翻炒"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "早餐", "清爽"],
+    "budget": 10
   },
   {
     "id": "8",
@@ -61,7 +68,8 @@
     "description": "川菜经典，麻辣鲜香",
     "ingredients": ["豆腐", "干辣椒", "花椒"],
     "steps": ["切豆腐块", "炒香辣椒", "淋汁"],
-    "nutritionTags": ["素食", "高蛋白", "丰盛"]
+    "nutritionTags": ["素食", "高蛋白", "丰盛", "晚餐", "驱寒"],
+    "budget": 16
   },
   {
     "id": "9",
@@ -69,7 +77,8 @@
     "description": "色泽诱人，开胃下饭",
     "ingredients": ["猪肉", "青椒", "酱油"],
     "steps": ["切肉丝", "切青椒", "快炒"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "午餐", "开胃"],
+    "budget": 22
   },
   {
     "id": "10",
@@ -77,7 +86,8 @@
     "description": "酸甜适口，营养全面",
     "ingredients": ["面条", "番茄", "牛肉"],
     "steps": ["煮面条", "炖汤料", "混合"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "午餐", "暖胃"],
+    "budget": 30
   },
   {
     "id": "11",
@@ -85,7 +95,8 @@
     "description": "简单快手，香气十足",
     "ingredients": ["面条", "葱", "油"],
     "steps": ["煮面条", "切葱段", "淋油混合"],
-    "nutritionTags": ["素食", "丰盛"]
+    "nutritionTags": ["素食", "丰盛", "早餐", "清爽"],
+    "budget": 8
   },
   {
     "id": "12",
@@ -93,7 +104,8 @@
     "description": "清淡爽口，健康轻食",
     "ingredients": ["生菜", "油", "盐"],
     "steps": ["洗菜", "切段", "炒制"],
-    "nutritionTags": ["素食", "低脂", "高纤维"]
+    "nutritionTags": ["素食", "低脂", "高纤维", "午餐", "鲜蔬"],
+    "budget": 8
   },
   {
     "id": "13",
@@ -101,7 +113,8 @@
     "description": "甜咸交融，独特风味",
     "ingredients": ["米", "香蕉", "鸡蛋"],
     "steps": ["备好米饭", "切香蕉", "炒制"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "早餐", "清凉"],
+    "budget": 12
   },
   {
     "id": "14",
@@ -109,7 +122,8 @@
     "description": "意式风味，浪漫晚餐",
     "ingredients": ["意面", "番茄", "大蒜"],
     "steps": ["煮意面", "炒番茄酱", "混合"],
-    "nutritionTags": ["素食", "丰盛"]
+    "nutritionTags": ["素食", "丰盛", "晚餐", "回暖"],
+    "budget": 20
   },
   {
     "id": "15",
@@ -117,7 +131,8 @@
     "description": "西餐简易版，香味浓郁",
     "ingredients": ["牛肉", "黑胡椒", "油"],
     "steps": ["切牛肉", "煎制", "撒黑椒"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "晚餐", "浓味"],
+    "budget": 60
   },
   {
     "id": "16",
@@ -125,7 +140,8 @@
     "description": "酸甜咸香，老少皆宜",
     "ingredients": ["猪肉", "糖", "醋"],
     "steps": ["切肉条", "炸制", "淋糖醋汁"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "午餐", "开胃"],
+    "budget": 32
   },
   {
     "id": "17",
@@ -133,7 +149,8 @@
     "description": "川菜名菜，香气诱人",
     "ingredients": ["猪肉", "黑木耳", "胡萝卜"],
     "steps": ["切肉丝", "炒配菜", "淋汁"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "晚餐", "驱寒"],
+    "budget": 25
   },
   {
     "id": "18",
@@ -141,7 +158,8 @@
     "description": "快手菜，营养丰富",
     "ingredients": ["生菜", "蚝油", "油"],
     "steps": ["洗菜", "炒制", "淋蚝油"],
-    "nutritionTags": ["素食", "低脂", "高纤维"]
+    "nutritionTags": ["素食", "低脂", "高纤维", "午餐", "鲜蔬"],
+    "budget": 10
   },
   {
     "id": "19",
@@ -149,7 +167,8 @@
     "description": "滋补汤品，暖身体",
     "ingredients": ["鸡肉", "番茄", "姜"],
     "steps": ["切鸡块", "炖汤", "加番茄"],
-    "nutritionTags": ["高蛋白", "清淡"]
+    "nutritionTags": ["高蛋白", "清淡", "晚餐", "暖胃"],
+    "budget": 35
   },
   {
     "id": "20",
@@ -157,7 +176,8 @@
     "description": "包子馅皮，家常美食",
     "ingredients": ["饺子皮", "猪肉", "白菜"],
     "steps": ["调馅料", "包饺子", "煮制"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "晚餐", "暖身"],
+    "budget": 25
   },
   {
     "id": "21",
@@ -165,7 +185,8 @@
     "description": "清汤爽口，简单清淡",
     "ingredients": ["馄饨", "葱", "油"],
     "steps": ["煮馄饨", "烧汤", "加葱油"],
-    "nutritionTags": ["清淡", "低脂"]
+    "nutritionTags": ["清淡", "低脂", "早餐", "热汤"],
+    "budget": 15
   },
   {
     "id": "22",
@@ -173,7 +194,8 @@
     "description": "脆爽可口，家常下饭菜",
     "ingredients": ["土豆", "油", "盐"],
     "steps": ["切土豆片", "炒制", "调味"],
-    "nutritionTags": ["素食", "丰盛"]
+    "nutritionTags": ["素食", "丰盛", "午餐", "清爽"],
+    "budget": 8
   },
   {
     "id": "23",
@@ -181,7 +203,8 @@
     "description": "肉质鲜嫩，酱香浓郁",
     "ingredients": ["鸡腿", "酱油", "糖"],
     "steps": ["焯鸡腿", "炖汤", "收汁"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "晚餐", "温补"],
+    "budget": 28
   },
   {
     "id": "24",
@@ -189,7 +212,8 @@
     "description": "异域风味，简单快手",
     "ingredients": ["鸡肉", "米", "咖喱"],
     "steps": ["炖鸡肉", "烹米饭", "混合"],
-    "nutritionTags": ["高蛋白", "丰盛"]
+    "nutritionTags": ["高蛋白", "丰盛", "午餐", "开胃"],
+    "budget": 30
   },
   {
     "id": "25",
@@ -197,7 +221,8 @@
     "description": "爽脆鲜香，健康轻食",
     "ingredients": ["豆芽", "油", "盐"],
     "steps": ["洗豆芽", "快炒", "调味"],
-    "nutritionTags": ["素食", "低脂", "高纤维"]
+    "nutritionTags": ["素食", "低脂", "高纤维", "午餐", "鲜蔬"],
+    "budget": 6
   },
   {
     "id": "26",
@@ -205,7 +230,8 @@
     "description": "滋补又清爽，四季皆宜",
     "ingredients": ["番茄", "鸡蛋", "油"],
     "steps": ["切番茄", "烧汤", "打蛋花"],
-    "nutritionTags": ["清淡", "低脂"]
+    "nutritionTags": ["清淡", "低脂", "早餐", "回暖"],
+    "budget": 10
   },
   {
     "id": "27",
@@ -213,7 +239,8 @@
     "description": "豆腐软嫩，汁液浓郁",
     "ingredients": ["豆腐", "酱油", "糖"],
     "steps": ["切豆腐块", "炒制", "炖汁"],
-    "nutritionTags": ["素食", "高蛋白", "丰盛"]
+    "nutritionTags": ["素食", "高蛋白", "丰盛", "晚餐", "温补"],
+    "budget": 12
   },
   {
     "id": "28",
@@ -221,7 +248,8 @@
     "description": "清热祛湿，营养补身",
     "ingredients": ["排骨", "冬瓜", "姜"],
     "steps": ["焯排骨", "炖汤", "加冬瓜"],
-    "nutritionTags": ["高蛋白", "清淡", "低脂"]
+    "nutritionTags": ["高蛋白", "清淡", "低脂", "晚餐", "热汤"],
+    "budget": 38
   },
   {
     "id": "29",
@@ -229,7 +257,8 @@
     "description": "软糯香甜，节日必备",
     "ingredients": ["年糕", "辣椒", "酱油"],
     "steps": ["切年糕", "炒制", "调味"],
-    "nutritionTags": ["素食", "丰盛"]
+    "nutritionTags": ["素食", "丰盛", "宵夜", "浓味"],
+    "budget": 15
   },
   {
     "id": "30",
@@ -237,6 +266,7 @@
     "description": "鲜虾肉质，蒜香扑鼻",
     "ingredients": ["虾", "大蒜", "油"],
     "steps": ["剥虾", "炒蒜", "炒虾"],
-    "nutritionTags": ["高蛋白", "低脂"]
+    "nutritionTags": ["高蛋白", "低脂", "晚餐", "清凉"],
+    "budget": 50
   }
 ]

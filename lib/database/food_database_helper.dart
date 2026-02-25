@@ -27,7 +27,7 @@ class FoodDatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createTables,
       onUpgrade: _onUpgrade,
     );
@@ -42,8 +42,8 @@ class FoodDatabaseHelper {
         description TEXT,
         ingredients TEXT,
         steps TEXT,
-        nutritionTags TEXT
-
+        nutritionTags TEXT,
+        budget REAL DEFAULT 0
       )
     ''');
     // 新增原材料表
@@ -76,6 +76,7 @@ class FoodDatabaseHelper {
           nutritionTags: item['nutritionTags'] != null
               ? List<String>.from(item['nutritionTags'])
               : <String>[],
+          budget: (item['budget'] as num?)?.toDouble() ?? 0,
         );
         await db.insert('foods', food.toMap());
         print('初始化 ${jsonList.length} 条菜谱');
@@ -110,6 +111,31 @@ class FoodDatabaseHelper {
       );
       if (!hasNutritionTags) {
         await db.execute('ALTER TABLE foods ADD COLUMN nutritionTags TEXT');
+      }
+    }
+    if (oldVersion < 3) {
+      final tableInfo = await db.rawQuery('PRAGMA table_info(foods)');
+      final hasBudget = tableInfo.any(
+        (row) => row['name'] == 'budget',
+      );
+      if (!hasBudget) {
+        await db.execute('ALTER TABLE foods ADD COLUMN budget REAL DEFAULT 0');
+      }
+      // 从 JSON 重新加载 budget 数据
+      try {
+        final data = await rootBundle.loadString('assets/data/foods.json');
+        final List<dynamic> jsonList = json.decode(data);
+        for (var item in jsonList) {
+          final budget = (item['budget'] as num?)?.toDouble() ?? 0;
+          await db.update(
+            'foods',
+            {'budget': budget},
+            where: 'id = ?',
+            whereArgs: [item['id']],
+          );
+        }
+      } catch (e) {
+        print('❌ 迁移 budget 数据失败: $e');
       }
     }
   }
