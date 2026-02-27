@@ -12,7 +12,7 @@ func SetupRouter() *gin.Engine {
 	// 健康检查
 	r.GET("/health", handlers.HealthCheck)
 
-	// API v1 路由组
+	// API
 	api := r.Group("/api")
 	{
 		// 验证码登录/注册
@@ -24,6 +24,13 @@ func SetupRouter() *gin.Engine {
 		{
 			recommendGroup.POST("/basic_recommend", handlers.GetRecommendations)
 			recommendGroup.POST("/call_ai", handlers.CallAI)
+		}
+
+		// 收藏相关
+		FavoriteGroup := api.Group("/favorite")
+		{
+			FavoriteGroup.POST("/sync", handlers.FavoriteSync)
+			FavoriteGroup.GET("/list", handlers.GetFavorites)
 		}
 
 		// 数据更新

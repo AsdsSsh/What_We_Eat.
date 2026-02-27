@@ -22,6 +22,7 @@ func (a *authServiceImpl) GenerateVerificationCode(email string) error {
 
 	// 生成6位随机验证码
 	code, err := generateRandomCode(6)
+	println("生成的验证码:", code)
 	if err != nil {
 		return err
 	}
@@ -39,10 +40,10 @@ func (a *authServiceImpl) GenerateVerificationCode(email string) error {
 // 返回: 用户, 是否新用户, 错误
 func (a *authServiceImpl) VerifyCode(email, code string) (*models.User, bool, error) {
 	db := database.GetDB()
-
 	// 查找验证码
 	cachedCode, exists := cache.GetVerificationCode(email)
 	if !exists || cachedCode != code {
+		println("缓存中的验证码:", cachedCode)
 		return nil, false, fmt.Errorf("invalid or expired verification code")
 	}
 	// 验证成功，删除验证码
@@ -56,8 +57,9 @@ func (a *authServiceImpl) VerifyCode(email, code string) (*models.User, bool, er
 	if result.Error == gorm.ErrRecordNotFound {
 		// 创建新用户
 		user = models.User{
+			ID:        time.Now().Format("20060102150405"),
 			Email:     email,
-			Name:      "HaveYouEatUser",
+			Name:      email,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}

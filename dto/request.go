@@ -1,6 +1,5 @@
 package dto
 
-// 获取验证码请求（通过 query 参数）
 type GetVerificationCodeRequest struct {
 	Email string `form:"email" binding:"required"`
 }
@@ -20,4 +19,9 @@ type RecommendationRequest struct {
 type DailyIntakeRequest struct {
 	UserID string   `json:"userId"`
 	Foods  []string `json:"foods"`
+}
+
+type FavoriteRequest struct {
+	Token   string   `json:"token"`
+	FoodIDs []string `json:"favorites"`
 }
