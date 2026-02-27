@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/i18n/translations.dart';
 import 'package:what_we_eat/models/food.dart';
 import 'package:what_we_eat/pages/ai_assistant_page.dart';
+import 'package:what_we_eat/pages/login_page.dart';
 import 'package:what_we_eat/pages/random_recipe_page.dart';
 import 'package:what_we_eat/pages/recipe_detail_page.dart';
 import 'package:what_we_eat/pages/setting_page.dart';
@@ -245,6 +246,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     if (!firstLaunch) return;
     await prefs.setBool('firstLaunch', false);
     await _determinePosition();
+
+    // 定位权限处理完成后，若用户未登录则提示登录
+    if (!mounted) return;
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    if (!auth.isLoggedIn) {
+      _showLoginPrompt();
+    }
   }
 
   Future<bool> _requestLocationPermission() async {
@@ -275,6 +283,84 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final granted = await _requestLocationPermission();
     if (!granted) return;
     await _fetchCurrentLocation();
+  }
+
+  /// 首次启动定位权限后提示登录/注册
+  void _showLoginPrompt() {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor:
+              isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+          title: Row(
+            children: [
+              Icon(Icons.person_rounded, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                t('login/register'),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? AppTheme.textPrimaryDark
+                      : AppTheme.textPrimaryLight,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            _selectedLanguage == 'zh'
+                ? '登录后可同步收藏、获取个性化推荐等更多功能。'
+                : 'Log in to sync favorites, get personalized recommendations and more.',
+            style: TextStyle(
+              color: isDark
+                  ? AppTheme.textSecondaryDark
+                  : AppTheme.textSecondaryLight,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                _selectedLanguage == 'zh' ? '稍后再说' : 'Later',
+                style: TextStyle(
+                  color: isDark
+                      ? AppTheme.textSecondaryDark
+                      : AppTheme.textSecondaryLight,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LoginPage(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                _selectedLanguage == 'zh' ? '去登录' : 'Log in',
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // ---- 推荐刷新 ----

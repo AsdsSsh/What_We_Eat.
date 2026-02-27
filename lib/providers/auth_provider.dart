@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:what_we_eat/services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   String? _token;
@@ -23,6 +24,12 @@ class AuthProvider extends ChangeNotifier {
     _userId = prefs.getString('userId');
     _email = prefs.getString('email');
     _isLoggedIn = _token != null && _token!.isNotEmpty;
+
+    if (_isLoggedIn) {
+      AuthService.startFavoriteSyncTimer();
+    } else {
+      AuthService.stopFavoriteSyncTimer();
+    }
     
     // 调试日志
     debugPrint('=== checkLoginStatus ===');
@@ -53,6 +60,7 @@ class AuthProvider extends ChangeNotifier {
     _email = email;
     _userName = userName;
     _isLoggedIn = true;
+    AuthService.startFavoriteSyncTimer();
     notifyListeners();
   }
 
@@ -69,6 +77,7 @@ class AuthProvider extends ChangeNotifier {
     _userName = null;
     _userId = null;
     _isLoggedIn = false;
+    AuthService.stopFavoriteSyncTimer();
     notifyListeners();
   }
 

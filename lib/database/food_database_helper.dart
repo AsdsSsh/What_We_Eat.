@@ -270,8 +270,37 @@ class FoodDatabaseHelper {
     }
   }
 
+  /// 根据服务器返回的 foodId 列表，替换本地所有收藏
+  /// 1. 清空 favorite_foods 表
+  /// 2. 根据 foodId 从 foods 表查找对应菜谱信息，写入 favorite_foods
+  Future<void> replaceAllFavoritesFromIds(List<String> foodIds) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      // 清空旧收藏
+      await txn.delete('favorite_foods');
 
-  
+      for (final id in foodIds) {
+        if (id.isEmpty) continue;
+        // 从本地菜谱表查找该食物
+        final maps = await txn.query('foods', where: 'id = ?', whereArgs: [id]);
+        if (maps.isNotEmpty) {
+          final food = Food.fromMap(maps.first);
+          await txn.insert(
+            'favorite_foods',
+            {'id': food.id, 'name': food.name, 'description': food.description},
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        } else {
+          // 本地没有该菜谱，仅存 id
+          await txn.insert(
+            'favorite_foods',
+            {'id': id, 'name': '', 'description': ''},
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      }
+    });
+  }
 
   /// 收藏菜谱相关操作 结束
 }

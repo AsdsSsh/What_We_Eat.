@@ -120,6 +120,16 @@ class _LoginPageState extends State<LoginPage> {
           return;
         }
         await auth.login(data['token'], data['email'], userName: data['email']);
+
+        // 登录成功后从服务器拉取收藏数据到本地
+        final userId = (data['userId'] ?? data['user_id'] ?? '').toString();
+        if (userId.isNotEmpty) {
+          AuthService.fetchAndStoreFavorites(
+            userId: userId,
+            token: data['token'],
+          );
+        }
+
         if (mounted) {
           Navigator.pop(context, true);
         }

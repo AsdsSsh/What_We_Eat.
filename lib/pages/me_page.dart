@@ -268,7 +268,7 @@ class _MePageState extends State<MePage> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  _buildStatItem('0', t('MyFavoritesCnt'), isDark, onTap: () {
+                                  _buildStatItem('', t('MyFavoritesCnt'), isDark, onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(

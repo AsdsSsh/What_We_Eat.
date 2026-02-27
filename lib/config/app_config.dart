@@ -1,4 +1,4 @@
-/// 应用配置 - 统一管理版本号等全局配置
+/// 应用全局配置
 class AppConfig {
   // 禁止实例化
   AppConfig._();
@@ -13,7 +13,7 @@ class AppConfig {
   static const String fullVersion = 'v$version';
   
   /// 商标显示
-  static  const String trademark = '© 2025 吃了么';
+  static  const String trademark = '© 2026 吃了么';
 
   /// 版本显示文本 (中文)
   static const String versionText = '版本 $version';
@@ -23,4 +23,7 @@ class AppConfig {
   
   /// 应用描述
   static const String appDescription = '用你手边的食材，解锁万千美味';
+
+  /// 用户收藏同步间隔（分钟）
+  static const int favoriteSyncIntervalMinutes = 5;
 }
