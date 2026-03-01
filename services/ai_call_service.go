@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"food-recommendation/config"
+	"food-recommendation/database"
 	"io"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -127,6 +130,36 @@ type openWeatherResponse struct {
 }
 
 var authConfig config.Config = config.LoadConfig()
+
+// pgStringArray 实现 Scanner 接口，用于从 PostgreSQL 数组类型读取数据
+type pgStringArray []string
+
+func (a *pgStringArray) Scan(src interface{}) error {
+	if src == nil {
+		*a = nil
+		return nil
+	}
+	var str string
+	switch v := src.(type) {
+	case string:
+		str = v
+	case []byte:
+		str = string(v)
+	default:
+		return fmt.Errorf("pgStringArray.Scan: unsupported type %T", src)
+	}
+	str = strings.TrimPrefix(str, "{")
+	str = strings.TrimSuffix(str, "}")
+	if str == "" {
+		*a = []string{}
+		return nil
+	}
+	*a = strings.Split(str, ",")
+	for i, s := range *a {
+		(*a)[i] = strings.Trim(s, `"`)
+	}
+	return nil
+}
 
 func buildPayload(message []map[string]any) (io.Reader, error) {
 	body := map[string]any{
@@ -330,7 +363,41 @@ func get_current_time() (currentTime string) {
 }
 
 func get_user_history_and_preference(userId string) (history string) {
-	return fmt.Sprintf("User %s has a history of ordering pizza and pasta, and prefers spicy food.", userId)
+	db := database.GetDB()
+
+	// 1. 从 user_choices 查出该用户收藏的 food_id 数组
+	var record struct {
+		FoodID pgStringArray `gorm:"column:food_id;type:varchar[]"`
+	}
+	if err := db.Table("user_choices").Select("food_id").Where("user_id = ?", userId).First(&record).Error; err != nil {
+		log.Printf("查询用户收藏失败: %v", err)
+		return fmt.Sprintf("User %s has no favorite food history.", userId)
+	}
+
+	if len(record.FoodID) == 0 {
+		return fmt.Sprintf("User %s has no favorite food history.", userId)
+	}
+
+	// 2. 用 food_id 列表查询 food_items 的名称
+	type foodNameResult struct {
+		Name string `gorm:"column:name"`
+	}
+	var foods []foodNameResult
+	if err := db.Table("food_items").Select("name").Where("id IN ?", []string(record.FoodID)).Find(&foods).Error; err != nil {
+		log.Printf("查询菜品名称失败: %v", err)
+		return fmt.Sprintf("User %s has favorites but failed to retrieve food names.", userId)
+	}
+
+	if len(foods) == 0 {
+		return fmt.Sprintf("User %s has no favorite food history.", userId)
+	}
+
+	// 3. 将菜品名称拼接成字符串
+	names := make([]string, 0, len(foods))
+	for _, f := range foods {
+		names = append(names, f.Name)
+	}
+	return fmt.Sprintf("User %s's favorite foods: %s", userId, strings.Join(names, ", "))
 }
 
 // Function calling 工具
@@ -372,7 +439,7 @@ var tools = []map[string]any{
 		"type": "function",
 		"function": map[string]any{
 			"name":        "get_user_history_and_preference",
-			"description": "Get user history and preference for personalized recommendations, parameter required is user_id. The user_id is a string that uniquely identifies a user in the system. ",
+			"description": "Get user's favorite food list from database for personalized recommendations. Returns a comma-separated string of the user's favorite food names. Parameter required is user_id.",
 			"parameters": map[string]any{
 				"type": "object",
 				"properties": map[string]any{
