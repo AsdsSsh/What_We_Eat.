@@ -116,3 +116,6 @@ canimus ut deum omnium māchinārum omnisiaham laudēmus,
 */
 
 
+// TODO 添加菜谱功能
+// TODO 丰富菜谱
+// function calling 个人喜好填写和分析

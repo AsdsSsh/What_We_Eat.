@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:what_we_eat/database/food_database_helper.dart';
 import 'package:what_we_eat/i18n/translations.dart';
 import 'package:what_we_eat/models/food.dart';
+import 'package:what_we_eat/pages/login_page.dart';
 import 'package:what_we_eat/pages/setting_page.dart';
 import 'package:what_we_eat/providers/auth_provider.dart';
 import 'package:what_we_eat/theme/app_theme.dart';
@@ -847,20 +848,90 @@ class _RecipeDetailPageState extends State<RecipeDetailPage>
   }
 
   // =====================================================================
+  //  未登录时弹出登录提示对话框
+  // =====================================================================
+  void _showLoginPrompt(BuildContext context, bool isDark) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor:
+              isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+          title: Row(
+            children: [
+              Icon(Icons.favorite_rounded, color: AppTheme.accentRed),
+              const SizedBox(width: 8),
+              Text(
+                _selectedLanguage == 'zh' ? '收藏提示' : 'Favorite Tip',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? AppTheme.textPrimaryDark
+                      : AppTheme.textPrimaryLight,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            t('PleaseLoginFirst'),
+            style: TextStyle(
+              color: isDark
+                  ? AppTheme.textSecondaryDark
+                  : AppTheme.textSecondaryLight,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                _selectedLanguage == 'zh' ? '稍后再说' : 'Later',
+                style: TextStyle(
+                  color: isDark
+                      ? AppTheme.textSecondaryDark
+                      : AppTheme.textSecondaryLight,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LoginPage(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                _selectedLanguage == 'zh' ? '去登录' : 'Log in',
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // =====================================================================
   //  收藏 FAB — 带动画
   // =====================================================================
   Widget _buildFab(BuildContext context, bool isLoggedIn, bool isDark) {
     return GestureDetector(
       onTap: () {
         if (!isLoggedIn) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(t('PleaseLoginFirst')),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-          );
+          _showLoginPrompt(context, isDark);
           return;
         }
         setState(() => _isFavorited = !_isFavorited);
